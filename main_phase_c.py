@@ -547,7 +547,7 @@ def train_static_policy(
     
     v7: Uses build_transform_with_ops with adjusted probabilities.
     """
-    from src.augmentations import build_transform_with_ops
+
     
     start_time = time.time()
     set_seed_deterministic(seed, deterministic=True)
@@ -753,7 +753,7 @@ def run_greedy_combination_search(
     sorted_ops = sorted(best_configs.items(), key=lambda x: x[1][2], reverse=True)
     
     print(f"\n{'='*70}")
-    print(f"Phase C: Greedy Combination Search with Validation (v7)")
+    print(f"Phase C: Greedy Combination Search with Validation")
     print(f"{'='*70}")
     print(f"Parameters: max_ops={max_ops}, min_improvement={min_improvement}%, p_any_target={p_any_target}")
     print(f"\nAvailable operations (sorted by Phase B accuracy):")

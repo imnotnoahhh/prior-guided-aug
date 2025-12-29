@@ -6,7 +6,7 @@ Implements stratified 5-Fold splitting for low-data augmentation policy search.
 Each fold contains 10,000 samples (20% of full dataset), further split into
 Train (9,000) / Val (1,000) for hyperparameter search.
 
-Reference: docs/research_plan_v4.md Section 1.2
+Reference: docs/research_plan.md Section 1.2
 """
 
 from pathlib import Path

@@ -21,12 +21,12 @@ Output: outputs/phase0_calibration.csv
 
 import argparse
 import csv
-import os
+
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Tuple
+
 
 import numpy as np
 import torch
@@ -224,10 +224,10 @@ def train_single_config(
     start_time = time.time()
     
     for epoch in range(1, epochs + 1):
-        train_loss, train_acc = train_one_epoch(
+        _, train_acc = train_one_epoch(
             model, train_loader, criterion, optimizer, device
         )
-        val_loss, val_acc, top5_acc = evaluate(model, val_loader, criterion, device)
+        _, val_acc, _ = evaluate(model, val_loader, criterion, device)
         
         scheduler.step()
         

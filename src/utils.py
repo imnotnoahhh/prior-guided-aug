@@ -9,7 +9,7 @@ Provides:
 - EarlyStopping: Early stopping based on validation loss
 - get_optimizer_and_scheduler: Fixed hyperparameters per No-NAS constraint
 
-Reference: docs/research_plan_v4.md Section 5
+Reference: docs/research_plan.md Section 5
 """
 
 import random

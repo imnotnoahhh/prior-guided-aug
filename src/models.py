@@ -3,7 +3,7 @@
 Model Module for Prior-Guided Augmentation Policy Search.
 
 Provides ResNet-18 model for CIFAR-100 classification.
-Architecture is fixed per No-NAS constraint (research_plan_v4.md Section 5).
+Architecture is fixed per No-NAS constraint (ResNet-18 only).
 
 Note: We do NOT modify the architecture. Only the data augmentation changes.
 """
