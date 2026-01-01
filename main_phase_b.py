@@ -433,6 +433,11 @@ def aggregate_results(raw_csv_path: Path, summary_csv_path: Path) -> pd.DataFram
         print("WARNING: No successful runs in raw CSV")
         return pd.DataFrame()
     
+    # FOR ASHA: Keep only the result from the maximum epoch for each (op, m, p, seed)
+    # This prevents averaging early rungs (e.g. 30 epochs) with final rungs (e.g. 200 epochs)
+    df = df.sort_values("epochs_run", ascending=False)
+    df = df.drop_duplicates(subset=["op_name", "magnitude", "probability", "seed", "fold_idx"], keep="first")
+
     # Group by (op_name, magnitude, probability)
     summary = df.groupby(["op_name", "magnitude", "probability"]).agg(
         mean_val_acc=("val_acc", "mean"),
