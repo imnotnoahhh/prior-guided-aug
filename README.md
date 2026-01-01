@@ -1,4 +1,4 @@
-# Prior-Guided Augmentation Policy Search
+# Prior-Guided Augmentation: A Reliable Strategy for Small-Sample Datasets
 
 官方 PyTorch 代码：在 CIFAR-100 低数据场景（每类约 100 张）下，利用先验约束的 (magnitude, probability) 联合搜索和多阶段管线找到最优增强策略。
 

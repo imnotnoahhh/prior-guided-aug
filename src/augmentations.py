@@ -1,6 +1,6 @@
 # Augmentation operations pool (S0 baseline + candidate pool)
 """
-Augmentation Module for Prior-Guided Augmentation Policy Search.
+Augmentation Module for Prior-Guided Augmentation: A Reliable Strategy for Small-Sample Datasets.
 
 Implements:
 - S0 Baseline: RandomCrop(padding=4) + RandomHorizontalFlip(p=0.5)
