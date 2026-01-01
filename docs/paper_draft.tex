@@ -1,0 +1,106 @@
+\documentclass{article}
+
+% 导入必要的包
+\usepackage{graphicx} % 插入图片
+\usepackage{booktabs} % 绘制三线表
+\usepackage{amsmath}  % 数学公式
+\usepackage{float}    %以此强行固定图片位置
+
+\title{Prior-Guided Augmentation: A Reliable Strategy for Small-Sample Datasets}
+\author{Fuyao Qin}
+\date{January 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Data augmentation is critical for deep learning, especially in small-sample regimes. While complex, automated augmentation strategies like RandAugment have achieved state-of-the-art results on large-scale datasets, their efficacy in data-scarce scenarios remains under-explored. In this work, we investigate the relationship between augmentation complexity and model stability in a constrained CIFAR-100 setting (100 samples per class). Contrary to the prevailing belief that "more is better," we identify a \textbf{"Complexity Gap"}: complex multi-operation strategies yield diminishing returns while significantly increasing training variance. We propose a lightweight, Prior-Guided Search framework that utilizes ASHA and a greedy selection policy to efficiently identify optimal augmentations. Our method discovers that a single, well-tuned operation (e.g., ColorJitter) can achieve performance comparable to RandAugment (40.74\% vs 42.24\%) but with significantly higher stability (Std: 0.78 vs 1.17) and interpretability. Our findings advocate for an "Occam's Razor" approach to augmentation in few-shot learning, prioritizing simplicity and stability over complexity.
+\end{abstract}
+
+\section{Introduction}
+
+Deep learning models are notoriously data-hungry. When training data is scarce, overfitting becomes the primary bottleneck. Data Augmentation (DA) addresses this by synthetically expanding the dataset. Recently, Automated Data Augmentation (AutoAugment, RandAugment) has dominated the field, employing complex search spaces to combine multiple transformations (e.g., N=2, M=9).
+
+However, are these complex strategies necessary---or even harmful---when data is extremely limited? 
+
+\begin{figure}[H]
+    \centering
+    % 确保文件名和你上传的一致
+    \includegraphics[width=0.9\linewidth]{fig3_complexity_gap.png}
+    \caption{\textbf{The Complexity Gap.} We plot Instability (Standard Deviation) against Algorithmic Complexity. Our method (Green) lies on the Pareto frontier, achieving high accuracy with minimal complexity and maximum stability, whereas RandAugment (Red) trades stability for marginal gains.}
+    \label{fig:complexity}
+\end{figure}
+
+In this paper, we conduct a systematic study on CIFAR-100 with only 100 samples per class. We observe that while RandAugment provides a marginal accuracy gain, it introduces significant instability. We propose a Prior-Guided Augmentation search that:
+\begin{itemize}
+    \item Uses a continuous 2D search space (Magnitude, Probability).
+    \item Employs Multi-Fidelity Optimization (ASHA) for efficiency.
+    \item Incorporates a "Destructiveness Penalty" to prevent semantic corruption.
+\end{itemize}
+
+Surprisingly, our search "collapses" to a single operation, rejecting complex combinations. We argue this is a feature, not a bug: in small-sample regimes, the simplest effective augmentation is the most robust.
+
+\section{Methodology}
+
+\subsection{Prior-Guided Search Space}
+We define a search space of $K=8$ operations (e.g., ColorJitter, RandomErasing), each parameterized by Magnitude ($m$) and Probability ($p$). Unlike previous works that fix $p$, we search both jointly using a continuous prior.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{fig2_search_space_colorjitter.png}
+    \caption{\textbf{Prior-Guided Search Space.} Visualization of Phase A screening for \texttt{ColorJitter}. The colors indicate validation accuracy. Our search successfully identifies a high-performance region (marked in red) that balances magnitude and probability effectively.}
+    \label{fig:search_space}
+\end{figure}
+
+\subsection{Search Strategy}
+Our pipeline consists of three phases:
+\begin{enumerate}
+    \item \textbf{Phase A (Screening)}: Low-fidelity filtering using Sobol sequences.
+    \item \textbf{Phase B (Tuning)}: ASHA (Asynchronous Successive Halving) to efficiently find optimal $(m, p)$ for each promising operator.
+    \item \textbf{Phase C (Composition)}: A greedy strategy to combine operators, adding them only if they improve the \textit{Stability-Efficiency Score}.
+\end{enumerate}
+
+\section{Experiments}
+
+\subsection{Setup}
+Dataset: CIFAR-100 (subsampled to 20\%/class). Model: ResNet-18. All models are trained for 200 epochs from scratch.
+
+\subsection{Main Results}
+
+Table \ref{tab:main_results} compares our Prior-Guided approach against standard baselines.
+
+\begin{table}[H]
+    \centering
+    \caption{Comparison on CIFAR-100 (100 samples/class). Results over 5 folds. Note the significant reduction in standard deviation (Std Dev) for our method.}
+    \label{tab:main_results}
+    \begin{tabular}{lccc}
+        \toprule
+        Method & Mean Acc (\%) & Std Dev (Stability) & Complexity \\
+        \midrule
+        Baseline (S0) & 39.90 & 1.01 & Low \\
+        Baseline-NoAug & 29.08 & 3.30 & None \\
+        RandAugment & \textbf{42.24} & 1.17 & High (N=2) \\
+        Cutout & 36.26 & 1.23 & Med \\
+        \midrule
+        \textbf{Ours (Optimal)} & 40.74 & \textbf{0.78} & \textbf{Low (Single)} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Analysis}
+\textbf{The Stability Argument}: While RandAugment achieves +1.5\% higher mean accuracy, its standard deviation is 50\% higher than ours (1.17 vs 0.78). In small-sample applications, consistency is often more critical than peak performance.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{fig1_stability_boxplot.png}
+    \caption{\textbf{Stability Analysis.} Comparison of validation accuracy distributions over 5 folds. While RandAugment achieves slightly higher peak performance, our Prior-Guided Single-Op strategy demonstrates significantly lower variance ($\sigma=0.78$ vs $1.17$), offering a more reliable solution for small-sample regimes.}
+    \label{fig:stability}
+\end{figure}
+
+\textbf{Mechanism of Action}: Our search identified \texttt{ColorJitter} as the optimal single operation. This suggests that for this resolution and sample size, photometric diversity is more valuable than geometric deformation.
+
+\section{Conclusion}
+We demonstrate that in small-sample regimes, complex augmentation strategies yield diminishing returns. Our Prior-Guided search successfully identifies a simple, stable, and effective policy, validating the principle that "Simplicity is reliable."
+
+\end{document}
