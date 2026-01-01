@@ -48,13 +48,10 @@ def save_single_image(img_tensor, title, out_path):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Visualize all augmentations")
-    parser.add_argument("--out_dir", type=Path, default=Path("outputs/figures/augment_examples"), help="Directory to save figures")
     parser.add_argument("--data_root", type=Path, default=Path("./data"), help="CIFAR-100 data root")
     parser.add_argument("--fold_idx", type=int, default=0, help="Fold index for sampling")
     parser.add_argument("--sample_idx", type=int, default=999, help="Index of the image to use (pick one that looks good)")
     args = parser.parse_args()
-
-    args.out_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"Loading dataset (Fold {args.fold_idx})...")
     ds = CIFAR100Subsampled(root=args.data_root, train=False, fold_idx=args.fold_idx, download=True)
