@@ -27,7 +27,7 @@ However, are these complex strategies necessary---or even harmful---when data is
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\linewidth]{../outputs/figures/fig3_complexity_gap.png}
-    \caption{\textbf{The Complexity Gap.} We plot Instability (Standard Deviation) against Algorithmic Complexity. Our method (Green) lies on the Pareto frontier, achieving high accuracy with minimal complexity and maximum stability, whereas RandAugment (Red) trades stability for marginal gains.}
+    \caption{\textbf{The Complexity Gap in small-sample regimes.} The relationship between validation accuracy, training instability (standard deviation $\sigma$), and algorithmic complexity across various augmentation strategies. Results are averaged over 5 independent folds. Our derived single-operation policy (Green) represents a Pareto-optimal balance between performance and reliability.}
     \label{fig:complexity}
 \end{figure}
 
@@ -50,8 +50,8 @@ Surprisingly, our search "collapses" to a single operation, rejecting complex co
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.0\linewidth]{../outputs/figures/augment_examples/all_augmentations_grid.png}
-    \caption{\textbf{Augmentation Search Space.} Visualization of the candidate operations applied to a sample image. While standard methods combine these aggressively, our Prior-Guided Search identifies that strictly limiting this pool (to just ColorJitter in our case) preserves semantic integrity and training stability.}
+    \includegraphics[width=1.0\linewidth]{augment_examples/all_augmentations_grid.png}
+    \caption{\textbf{Candidate Augmentation Operations.} Visualization of the search space pool. Samples are shown with exaggerated magnitude parameters for illustrative purposes. Our framework evaluates the stability-efficiency trade-off for each operation independently before considering composition.}
     \label{fig:augmentations}
 \end{figure}
 
@@ -61,7 +61,7 @@ We define a search space of $K=8$ operations (e.g., ColorJitter, RandomErasing),
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{../outputs/figures/fig2_search_space_colorjitter.png}
-    \caption{\textbf{Prior-Guided Search Space.} Visualization of Phase A screening for \texttt{ColorJitter}. The colors indicate validation accuracy. Our search successfully identifies a high-performance region (marked in red) that balances magnitude and probability effectively.}
+    \caption{\textbf{Empirical Search Manifold.} Validation accuracy distribution over the continuous 2D search space (Magnitude $m$, Probability $p$) for \texttt{ColorJitter}, obtained during Phase A screening. The red marker denotes the high-performance region identified for fine-tuning in Phase B.}
     \label{fig:search_space}
 \end{figure}
 
@@ -108,7 +108,7 @@ Table \ref{tab:main_results} compares our Prior-Guided approach against standard
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{../outputs/figures/fig1_stability_boxplot.png}
-    \caption{\textbf{Stability Analysis.} Comparison of validation accuracy distributions over 5 folds. While RandAugment achieves slightly higher peak performance, our Prior-Guided Single-Op strategy demonstrates significantly lower variance ($\sigma=0.78$ vs $1.17$), offering a more reliable solution for small-sample regimes.}
+    \caption{\textbf{Distribution of validation accuracy across 5 independent folds.} Comparison of Baseline, RandAugment, and our Prior-Guided strategy. While RandAugment exhibits higher peak performance, it suffers from significant variance, whereas our strategy achieves competitive results with a 33\% reduction in standard deviation ($\sigma=0.78$ vs $1.17$).}
     \label{fig:stability}
 \end{figure}
 
@@ -172,7 +172,7 @@ To evaluate the method's robustness across different datasets and sample regimes
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{../outputs/figures/fig5_cifar10_generalization.png}
-    \caption{\textbf{Generalization Performance.} Comparison on CIFAR-10 (50-shot). Our method achieves robustness comparable to state-of-the-art while maintaining zero variance across folds, outperforming the unaugmented baseline.}
+    \caption{\textbf{Cross-dataset Generalization Benchmarking.} Comparative performance on CIFAR-10 (50-shot) sampled over 5 folds. Error bars indicate standard deviation. Our method maintains state-of-the-art accuracy with zero induced training variance in this extreme data-scarce regime.}
     \label{fig:cifar10_gen}
 \end{figure}
 
@@ -183,7 +183,7 @@ We investigated whether searching for Magnitude ($m$) is necessary, or if simply
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{../outputs/figures/fig4_ablation_magnitude.png}
-    \caption{\textbf{Impact of Magnitude.} Even with fixed probability ($p=0.5$), varying magnitude significantly impacted performance. We observed a \textbf{4.2\% accuracy drop} between optimal magnitude ($m \approx 0.44$, 32.9\%) and standard magnitude ($m \approx 0.54$, 28.7\%). This confirms that Magnitude is a critical hyperparameter that cannot be arbitrarily fixed; it must be tuned.}
+    \caption{\textbf{Sensitivity of validation accuracy to the Magnitude parameter $m$ (fixed $p=0.5$).} The 4.2\% accuracy gap between the optimal value ($m \approx 0.44$) and standard defaults ($m \approx 0.54$) highlights the necessity of Magnitude tuning in small-sample augmentation design.}
     \label{fig:ablation}
 \end{figure}
 The results show clear performance variance driven by magnitude changes, validating our design choice of a 2D search space $(m, p)$ over a simplified 1D search.
