@@ -1,0 +1,4 @@
+Method,Mean,Std
+Baseline,45.2,18.65904606350496
+RandAugment,50.0,0.0
+Ours,50.0,0.0
