@@ -31,22 +31,23 @@ def plot_stability_boxplot():
     # Custom color palette
     colors = {'Baseline': '#95a5a6', 'RandAugment': '#e74c3c', 'Ours_optimal': '#2ecc71'}
     
-    sns.boxplot(x='method', y='val_acc', data=df, palette=colors, width=0.5)
+    # Use hue to fix the FutureWarning and set legend=False
+    sns.boxplot(x='method', y='val_acc', hue='method', data=df, palette=colors, width=0.5, legend=False)
     sns.stripplot(x='method', y='val_acc', data=df, color='black', alpha=0.6, jitter=0.1)
     
-    plt.title('Stability Analysis: Training Variance (5 Folds)', fontsize=14, fontweight='bold')
-    plt.ylabel('Validation Accuracy (%)')
-    plt.xlabel('')
+    plt.title('Validation Accuracy Distribution (5 Folds)', fontsize=14, fontweight='bold')
+    plt.ylabel('Top-1 Accuracy (%)')
+    plt.xlabel('Method')
     
     # Add Std Dev annotation
-    stats = df.groupby('method')['val_acc'].agg(['mean', 'std'])
+    stats = df.groupby('method', observed=True)['val_acc'].agg(['mean', 'std'])
     for i, method in enumerate(methods):
         mean = stats.loc[method, 'mean']
         std = stats.loc[method, 'std']
         plt.text(i, mean + 1.5, f"Mean: {mean:.1f}%\n$ \\sigma $: {std:.2f}",
                  ha='center', va='bottom', fontsize=11, fontweight='bold')
 
-    plt.ylim(36, 45)  # Zoom in to see variance
+    plt.ylim(36, 45)
     plt.tight_layout()
     plt.savefig(os.path.join(OUTPUT_DIR, 'fig1_stability_boxplot.png'))
     plt.close()
@@ -63,14 +64,14 @@ def plot_search_space_heatmap():
     sc = plt.scatter(df_op['probability'], df_op['magnitude'], 
                      c=df_op['val_acc'], cmap='viridis', s=100, edgecolors='black', alpha=0.8)
     
-    plt.colorbar(sc, label='Valid Accuracy (%)')
+    plt.colorbar(sc, label='Validation Accuracy (%)')
     
-    plt.title('Prior-Guided Search Space (ColorJitter)', fontsize=14, fontweight='bold')
-    plt.xlabel('Probability (p)')
-    plt.ylabel('Magnitude (m)')
+    plt.title('Search Space Manifold: ColorJitter', fontsize=14, fontweight='bold')
+    plt.xlabel('Probability ($p$)')
+    plt.ylabel('Magnitude ($m$)')
     
-    # Highlight the chosen point roughly (Phase C selected ~ m=0.25, p=0.42)
-    plt.scatter([0.42], [0.25], s=200, facecolors='none', edgecolors='red', linewidth=2, label='Optimal Found')
+    # Highlight the chosen point
+    plt.scatter([0.42], [0.25], s=250, facecolors='none', edgecolors='red', linewidth=3, label='Optimal Configuration')
     plt.legend(loc='upper left')
     
     plt.xlim(0, 1.0)
@@ -83,11 +84,8 @@ def plot_search_space_heatmap():
 
 def plot_complexity_tradeoff():
     print("Generating Complexity-Stability Trade-off...")
-    
-    # Load data from summary
     df_sum = pd.read_csv('outputs/phase_d_summary.csv')
     
-    # Map methods to our simplified labels
     method_map = {
         'Baseline': 'Baseline',
         'Ours_optimal': 'Ours (Optimal)',
@@ -111,21 +109,20 @@ def plot_complexity_tradeoff():
     colors = ['#95a5a6', '#2ecc71', '#e74c3c']
     
     # Bubble chart
-    sizes = [(acc - 20) * 30 for acc in df_plot['Accuracy']]
+    sizes = [(acc - 20) * 40 for acc in df_plot['Accuracy']]
     
     plt.scatter(df_plot['Complexity'], df_plot['Std'], s=sizes, c=colors, alpha=0.7, edgecolors='black')
     
-    # Add labels
     for i, row in df_plot.iterrows():
-        plt.text(row['Complexity'], row['Std'] + 0.05, 
-                 f"{row['Method']}\nAcc: {row['Accuracy']:.1f}%\nStd: {row['Std']:.2f}", 
-                 ha='center', fontweight='bold', fontsize=9)
+        plt.text(row['Complexity'], row['Std'] + 0.08, 
+                 f"{row['Method']}\nAcc: {row['Accuracy']:.1f}%\n$ \sigma $: {row['Std']:.2f}", 
+                 ha='center', fontweight='bold', fontsize=10)
 
-    plt.title('The Complexity Gap: Stability vs. Complexity', fontsize=14, fontweight='bold')
-    plt.ylabel('Instability (Standard Deviation) $\\downarrow$', fontsize=12)
-    plt.xlabel('Algorithmic Complexity (Search Space Size) $\\rightarrow$', fontsize=12)
+    plt.title('The Complexity Gap: Accuracy-Stability Balance', fontsize=14, fontweight='bold')
+    plt.ylabel('Instability (Standard Deviation $ \sigma $) $\\downarrow$', fontsize=12)
+    plt.xlabel('Algorithmic Complexity (Operations) $\\rightarrow$', fontsize=12)
     
-    plt.xticks([1, 2, 8], ['None', 'Single-Op', 'Multi-Op (N=2,M=9)'])
+    plt.xticks([1, 2, 8], ['Baseline', 'Single-Op (Ours)', 'Multi-Op (RandAug)'])
     plt.ylim(0.5, 1.5)
     plt.xlim(0, 10)
     plt.grid(True, linestyle='--', alpha=0.5)
@@ -143,23 +140,28 @@ def plot_ablation_magnitude():
         plt.figure(figsize=(8, 6))
         plt.plot(df['magnitude'], df['mean_val_acc'], marker='o', linewidth=2, color='#3498db', label='Validation Acc')
         
-        # Highlight best
         best_row = df.loc[df['mean_val_acc'].idxmax()]
-        plt.scatter([best_row['magnitude']], [best_row['mean_val_acc']], color='red', s=100, zorder=5, label='Optimal Magnitude')
+        # Marking both optimal and a standard high point
+        plt.scatter([best_row['magnitude']], [best_row['mean_val_acc']], color='red', s=120, zorder=5, label=f'Optimal ($m={best_row["magnitude"]:.2f}$)')
         
-        plt.title('Ablation: Impact of Magnitude (Fixed P=0.5)', fontsize=14, fontweight='bold')
-        plt.xlabel('Magnitude (m)')
-        plt.ylabel('Validation Accuracy (%)')
+        # Mark the "default" point if likely m=0.5
+        m_05 = df.iloc[(df['magnitude']-0.54).abs().argsort()[:1]]
+        if not m_05.empty:
+             plt.scatter(m_05['magnitude'], m_05['mean_val_acc'], color='gray', marker='x', s=100, zorder=5, label='Common Fixed Magnitude')
+
+        plt.title('Sensitivity Analysis: Impact of Magnitude (Fixed $p=0.5$)', fontsize=14, fontweight='bold')
+        plt.xlabel('Magnitude Parameter ($m$)')
+        plt.ylabel('Top-1 Accuracy (%)')
         plt.grid(True, linestyle='--', alpha=0.5)
         plt.legend()
         
-        # Add annotation for the gap
+        # Annotation
         min_acc = df['mean_val_acc'].min()
         max_acc = df['mean_val_acc'].max()
-        plt.annotate(f'Gap: {max_acc - min_acc:.1f}%', 
+        plt.annotate(f'Accuracy Gap: {max_acc - min_acc:.1f}%', 
                      xy=(best_row['magnitude'], max_acc), 
-                     xytext=(best_row['magnitude']+0.1, max_acc - 2),
-                     arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5))
+                     xytext=(best_row['magnitude']-0.15, max_acc - 2),
+                     arrowprops=dict(facecolor='black', shrink=0.08, width=1, headwidth=6))
 
         plt.tight_layout()
         plt.savefig(os.path.join(OUTPUT_DIR, 'fig4_ablation_magnitude.png'))
@@ -175,17 +177,17 @@ def plot_cifar10_generalization():
         plt.figure(figsize=(8, 6))
         colors = ['#95a5a6', '#e74c3c', '#2ecc71']
         
-        bars = plt.bar(df['Method'], df['Mean'], yerr=df['Std'], color=colors, capsize=10, alpha=0.8, edgecolor='black')
+        bars = plt.bar(df['Method'], df['Mean'], yerr=df['Std'], color=colors, capsize=12, alpha=0.8, edgecolor='black')
         
-        plt.title('Generalization: CIFAR-10 (50-shot)', fontsize=14, fontweight='bold')
+        plt.title('Generalization Benchmarking: CIFAR-10 (50-shot)', fontsize=14, fontweight='bold')
         plt.ylabel('Mean Accuracy (%)')
-        plt.ylim(0, 70)
+        plt.xlabel('Method')
+        plt.ylim(0, 75)
         
-        # Add value labels
         for bar in bars:
             height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height + 2,
-                     f'{height:.1f}%', ha='center', va='bottom', fontweight='bold')
+            plt.text(bar.get_x() + bar.get_width()/2., height + 3,
+                     f'{height:.1f}%', ha='center', va='bottom', fontweight='bold', fontsize=11)
 
         plt.tight_layout()
         plt.savefig(os.path.join(OUTPUT_DIR, 'fig5_cifar10_generalization.png'))
