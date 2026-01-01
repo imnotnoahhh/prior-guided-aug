@@ -1,5 +1,5 @@
-# Research Plan: Prior-Guided Augmentation Policy Search
-# 实验计划：先验引导增强策略搜索
+# Research Plan: Prior-Guided Augmentation: A Reliable Strategy for Small-Sample Datasets
+# 实验计划：先验引导增强——小样本数据集的可靠策略
 
 **Target**: Academic Conference (WACV / BMVC / ICIP Level)
 **Dataset**: CIFAR-100 (Subsampled: 20% per class, Stratified)

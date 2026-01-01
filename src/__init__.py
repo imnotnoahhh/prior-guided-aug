@@ -1,4 +1,4 @@
-# Prior-Guided Augmentation Policy Search - Source Package
+# Prior-Guided Augmentation - Source Package
 
 
 

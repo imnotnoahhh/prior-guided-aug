@@ -1,4 +1,4 @@
-# 先验引导增强策略搜索 (Prior-Guided Augmentation Policy Search)
+# 先验引导增强：小样本数据集的可靠策略 (Prior-Guided Augmentation: A Reliable Strategy for Small-Sample Datasets)
 
 ## 项目概述
 

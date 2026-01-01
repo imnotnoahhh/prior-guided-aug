@@ -1,6 +1,6 @@
 # Utilities: seed setting, path management, logging
 """
-Utility Module for Prior-Guided Augmentation Policy Search.
+Utility Module for Prior-Guided Augmentation: A Reliable Strategy for Small-Sample Datasets.
 
 Provides:
 - set_seed: Reproducibility setup

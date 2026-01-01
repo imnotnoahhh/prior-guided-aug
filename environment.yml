@@ -1,5 +1,5 @@
-# Prior-Guided Augmentation Policy Search
-# 先验引导增强策略搜索 - Conda 环境配置
+# Prior-Guided Augmentation: A Reliable Strategy for Small-Sample Datasets
+# 先验引导增强 - Conda 环境配置
 # 使用命令: conda env create -f environment.yml
 
 name: pga
