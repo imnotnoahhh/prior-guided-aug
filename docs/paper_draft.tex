@@ -41,10 +41,23 @@ In this paper, we conduct a systematic study on CIFAR-100 with only 100 samples 
 
 Surprisingly, our search "collapses" to a single operation, rejecting complex combinations. We argue this is a feature, not a bug: in small-sample regimes, the simplest effective augmentation is the most robust.
 
+\section{Related Work}
+
+\textbf{Automated Data Augmentation.} Pioneer works like AutoAugment \cite{cubuk2019autoaugment} formulated augmentation design as a discrete search problem using Reinforcement Learning. While effective, the computational cost was prohibitive. Subsequent methods like RandAugment \cite{cubuk2020randaugment} simplified this by reducing the search space to two parameters ($N, M$) and performing a grid search. However, these methods are implicitly designed for and tuned on large-scale datasets (ImageNet, CIFAR-100 full). Our work reveals that their core assumption---that complexity yields performance---breaks down in data-scarce limits.
+
+\textbf{Small-Sample Learning.} When data is limited, the primary challenge is high variance and overfitting \cite{he2016deep}. Transfer learning is the standard solution, but domain mismatches often require training from scratch. In this regime, heavy augmentations (like Cutout \cite{devries2017improved}) can destroy the limited semantic information available. Our work aligns with the "Data-Centric AI" perspective, seeking to optimize the data distribution relative to the model capacity.
+
 \section{Methodology}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{all_augmentations_grid.png}
+    \caption{\textbf{Augmentation Search Space.} Visualization of the candidate operations applied to a sample image. While standard methods combine these aggressively, our Prior-Guided Search identifies that strictly limiting this pool (to just ColorJitter in our case) preserves semantic integrity and training stability.}
+    \label{fig:augmentations}
+\end{figure}
+
 \subsection{Prior-Guided Search Space}
-We define a search space of $K=8$ operations (e.g., ColorJitter, RandomErasing), each parameterized by Magnitude ($m$) and Probability ($p$). Unlike previous works that fix $p$, we search both jointly using a continuous prior.
+We define a search space of $K=8$ operations (e.g., ColorJitter, RandomErasing), each parameterized by Magnitude ($m$) and Probability ($p$). Unlike previous works that fix $p$ or discretize $m$, we view the optimal augmentation configuration $\theta^*$ as a point in a continuous 2D manifold.
 
 \begin{figure}[H]
     \centering
@@ -54,12 +67,14 @@ We define a search space of $K=8$ operations (e.g., ColorJitter, RandomErasing),
 \end{figure}
 
 \subsection{Search Strategy}
-Our pipeline consists of three phases:
-\begin{enumerate}
-    \item \textbf{Phase A (Screening)}: Low-fidelity filtering using Sobol sequences.
-    \item \textbf{Phase B (Tuning)}: ASHA (Asynchronous Successive Halving) to efficiently find optimal $(m, p)$ for each promising operator.
-    \item \textbf{Phase C (Composition)}: A greedy strategy to combine operators, adding them only if they improve the \textit{Stability-Efficiency Score}.
-\end{enumerate}
+Our pipeline is designed to be rigorous yet efficient, consisting of three phases:
+
+\textbf{Phase A: Screening (Low-Fidelity).} We employ a Sobol sequence to quasi-randomly sample the $(m, p)$ space for each operation. Each configuration is trained for a short budget (40 epochs). This phase acts as a coarse filter, quickly discarding operations that degrade stability (e.g., high-magnitude geometric distortions).
+
+\textbf{Phase B: Tuning (ASHA).} For the surviving candidates, we use Asynchronous Successive Halving Algorithm (ASHA) \cite{li2020system}. ASHA dynamically allocates more training epochs (up to 200) to promising configs while early-stopping underperformers. This allows us to fine-tune the hyperparameters $(m, p)$ with high precision at a fraction of the cost of grid search.
+
+\textbf{Phase C: Composition (The "Collapse").} Finally, we employ a greedy strategy to combine operations. We start with the best single operation and iteratively attempt to add more. Crucially, we impose a "Stability Penalty": a new operation is accepted only if it improves the validation accuracy by a margin greater than its induced variance.
+\textit{Result:} The search consistently rejected multi-operation policies. The marginal gain of adding a second op was always outweighed by the loss in training stability. Thus, the strategy "collapsed" to a single optimal transform.
 
 \section{Experiments}
 
@@ -89,7 +104,7 @@ Table \ref{tab:main_results} compares our Prior-Guided approach against standard
 \end{table}
 
 \subsection{Analysis}
-\textbf{The Stability Argument}: While RandAugment achieves +1.5\% higher mean accuracy, its standard deviation is 50\% higher than ours (1.17 vs 0.78). In small-sample applications, consistency is often more critical than peak performance.
+\textbf{The Stability Argument.} While RandAugment achieves a +1.5\% higher mean accuracy, this comes at a steep price. As shown in Figure \ref{fig:stability}, RandAugment (Red) exhibits a much wider variance ($\sigma=1.17$) compared to our method ($\sigma=0.78$). In small-sample applications (e.g., medical imaging), "lucky seeds" cannot be relied upon; a guaranteed, stable baseline is often preferred over a high-variance method that might fail catastrophically on a new fold.
 
 \begin{figure}[H]
     \centering
@@ -98,9 +113,44 @@ Table \ref{tab:main_results} compares our Prior-Guided approach against standard
     \label{fig:stability}
 \end{figure}
 
-\textbf{Mechanism of Action}: Our search identified \texttt{ColorJitter} as the optimal single operation. This suggests that for this resolution and sample size, photometric diversity is more valuable than geometric deformation.
+\textbf{The Complexity Gap.} To quantify this trade-off, we define augmentation complexity $C$ as the expected number of transformations applied per sample: $C = \sum_{i} p_i$. For standard RandAugment ($N=2$, $p=0.5$ per op in pool? No, RandAugment applies N ops), complexity is effectively $N=2$. For our Single-Op policy, $C \le 1$. Figure \ref{fig:complexity} (Introduction) illustrates the core finding...
+
+\section{Limitations}
+Our study is limited to convolutional architectures (ResNet-18) trained from scratch. Whether similar conclusions hold for large pre-trained models or Vision Transformers (ViTs) remains an open question, as these architectures may exhibit different robustness properties.
 
 \section{Conclusion}
 We demonstrate that in small-sample regimes, complex augmentation strategies yield diminishing returns. Our Prior-Guided search successfully identifies a simple, stable, and effective policy, validating the principle that "Simplicity is reliable."
+
+\appendix
+\section{Implementation Details}
+\label{app:implementation}
+
+\subsection{Training Setup}
+All experiments are conducted on CIFAR-100 subsampled to 100 images per class (10,000 images total). We use a standard \textbf{ResNet-18} backbone trained from scratch.
+\begin{itemize}
+    \item \textbf{Optimizer}: SGD with Momentum (0.9).
+    \item \textbf{Learning Rate}: Initial LR 0.1, with Cosine Annealing scheduler (5 warmup epochs).
+    \item \textbf{Weight Decay}: 1e-2.
+    \item \textbf{Batch Size}: 128.
+    \item \textbf{Epochs}: 200.
+    \item \textbf{Label Smoothing}: 0.1.
+\end{itemize}
+
+\subsection{Augmentation Hyperparameters}
+\begin{itemize}
+    \item \textbf{Baseline}: RandomCrop (32$\times$32, padding=4) + RandomHorizontalFlip ($p=0.5$).
+    \item \textbf{Cutout}: Number of holes=1, Length=16.
+    \item \textbf{RandAugment}: Number of operations $N=2$, Magnitude $M=9$.
+    \item \textbf{Ours}: Search Space $K=8$ operations. Magnitude $m \in [0, 1]$ (continuous), Probability $p \in [0, 1]$ (continuous).
+\end{itemize}
+
+\subsection{Search Budget}
+\begin{itemize}
+    \item \textbf{Phase A (Screening)}: 40 epochs per trial, 20 Sobol samples per operation.
+    \item \textbf{Phase B (Tuning)}: ASHA scheduler with max\_epochs=200, grace\_period=60.
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end{document}
