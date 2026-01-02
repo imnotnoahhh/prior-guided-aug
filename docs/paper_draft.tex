@@ -125,6 +125,13 @@ Table \ref{tab:main_results} compares our Prior-Guided approach against standard
 
 \textbf{Semantic Preservation.} We hypothesize that the high variance of complex strategies stems from semantic destruction. To verify this, we quantified the "destructiveness" of augmentation policies using SSIM (Structural Similarity) and LPIPS (Perceptual Similarity) metrics. Results confirm that our single-operation policy maintains high structural integrity (SSIM: $\approx0.196$, LPIPS: $\approx0.091$), comparable to the minimal Baseline (SSIM: $\approx0.198$, LPIPS: $\approx0.084$). In contrast, RandAugment significantly distorts image structure (SSIM: $\approx0.147$, LPIPS: $\approx0.124$). This quantitative evidence supports our claim: our method improves performance by preserving semantic priors, while RandAugment's gains come at the cost of aggressive distortion, leading to instability.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{fig8_destructiveness.png}
+    \caption{\textbf{Semantic Preservation Analysis.} Comparison of destructive metrics (SSIM and LPIPS) across strategies. Our method (Green) maintains structural similarity (SSIM $\uparrow$) and perceptual quality (LPIPS $\downarrow$) comparable to the Baseline, whereas RandAugment (Red) introduces significant semantic distortion. Error bars denote standard deviation.}
+    \label{fig:destructiveness}
+\end{figure}
+
 \section{Limitations}
 Our study is limited to convolutional architectures (ResNet-18) trained from scratch. Whether similar conclusions hold for large pre-trained models or Vision Transformers (ViTs) remains an open question, as these architectures may exhibit different robustness properties.
 
