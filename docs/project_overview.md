@@ -47,7 +47,7 @@
 | **Batch Size** | 128 | |
 | **All Phase Epochs** | **200** | 统一训练预算，公平对比 |
 | **AMP** | Enabled | 混合精度加速 |
-| **num_workers** | 8 | |
+| **num_workers** | 8 (Server) / 0 (Mac) | 平台相关优化 |
 | **prefetch_factor** | 4 | |
 | **channels_last** | True | NHWC 内存格式优化 |
 
@@ -58,7 +58,8 @@
 | **Phase A** | **40** | 20 | 15 | 低保真快速筛选 |
 | **Phase B** | ASHA | N/A | N/A | 多轮淘汰 (40→100→200 ep) |
 | **Phase C** | 200 | 60 | 60 | 策略构建 |
-| **Phase D** | 200 | 60 | 60 | 最终评估 |
+| **Phase D** | 200 | 60 | 60 | 交叉验证 (CV) |
+| **Phase E** | 200 | N/A | N/A | **Test Set 最终评估** |
 
 - **监控指标**: `val_acc` (mode="max")
 - **min_delta**: 0.2（过滤噪声波动）
@@ -141,7 +142,7 @@ OP_DESTRUCTIVENESS = {
 | **训练** | 40 epochs, seed=42, Fold-0 |
 | **评分** | `mean(top3(val_acc[30:40]))` - 更稳定 |
 | **实验量** | 8 ops × 32 点 = 256 组 |
-| **预计时间** | ~20-30min (4 GPU 并行) |
+| **预计时间** | ~1h (单 GPU 串行) |
 
 **低保真筛选原理**: 
 40ep 训练与 200ep 最终性能高度相关（通常 ρ > 0.8），但仅需 1/5 计算量。
@@ -165,7 +166,7 @@ OP_DESTRUCTIVENESS = {
 | **Reduction Factor** | 1/2（每轮保留最好的一半） |
 | **Final Rung Multi-Seed** | 3 seeds 平均 (42, 123, 456) |
 | **实验量** | ~240 初始配置 → ~60 完成 200ep |
-| **预计时间** | ~2-4h (4 GPU 并行) |
+| **预计时间** | ~2-4h (单 GPU 串行) |
 
 **Rungs 对齐**: 40ep 与 Phase A 一致，便于 warm-start。
 
@@ -260,7 +261,7 @@ P(至少一个) = 1 - (1-0.04)(1-0.47) = 49% ≈ 50% ✓
 | **验证** | 5-Fold 交叉验证 |
 | **训练** | 200 epochs/fold, seed=42 |
 | **实验量** | 7 methods × 5 folds = 35 组 |
-| **预计时间** | ~0.5-1h (4 GPU 并行) |
+| **预计时间** | ~1h (单 GPU 串行) | |
 
 **对比方法 (7 个)**:
 
@@ -277,9 +278,17 @@ P(至少一个) = 1 - (1-0.04)(1-0.47) = 49% ≈ 50% ✓
 **输出文件**:
 - `outputs/phase_d_results.csv` - 每个 (method, fold) 的结果
 - `outputs/phase_d_summary.csv` - Mean ± Std 汇总（用于论文表格）
+- `outputs/phase_d_summary.csv` - Mean ± Std 汇总（用于论文表格）
 - `outputs/checkpoints/phase_d_fold{0-4}_best.pth` - Ours_optimal 的 5-fold 模型
 
-### 3.5 补充实验 (Supplementary Experiments)
+### 3.6 Phase E: 最终测试集评估 (Test Set Evaluation)
+
+**目标**: 使用官方 Test Set (10k images) 验证最终策略，避免数据泄露。
+
+- 脚本: `scripts/evaluate_final_policy.py`
+- 输出: `outputs/test_set_results.csv` (用于填补论文 Table 1 的最终一列)
+
+### 3.7 补充实验 (Supplementary Experiments)
 
 **目标**: 验证泛化性 (Generalization) 和设计必要性 (Necessity)
 
@@ -330,8 +339,8 @@ Ours_optimal ≥ RandAugment > Baseline > Baseline-NoAug
 | 项目 | 配置 |
 |------|------|
 | **云服务商** | 阿里云 |
-| **实例规格** | ecs.gn7i-4x.8xlarge |
-| **GPU** | 4 × NVIDIA A10 (4 × 24 GB) |
+| **实例规格** | N/A (Local/Cloud Single GPU) |
+| **GPU** | **1 × NVIDIA A10 (24 GB)** |
 | **vCPU** | 32 vCPU |
 | **内存** | 128 GiB |
 | **CUDA** | 12.8 |
@@ -340,16 +349,16 @@ Ours_optimal ≥ RandAugment > Baseline > Baseline-NoAug
 
 ---
 
-## 6. 总时间估算 (4 GPU 并行)
+## 6. 总时间估算 (单 GPU)
 
-| 阶段 | 时间 |
-|------|------|
-| Baseline | ~15 min |
-| Phase A | ~1-1.5h |
-| Phase B | ~2-4h |
-| Phase C | ~1h |
-| Phase D | ~0.5-1h |
-| **总计** | **~5-8h** |
+| 阶段 | 时间 | 备注 |
+|------|------|------|
+| Baseline | ~15 min | 快速基线 |
+| Phase A | ~3h | 实测 (11117s) |
+| Phase B | ~6.5h | 实测 (ASHA Tuning) |
+| Phase C | ~1.5h | 预估 (早停) |
+| Phase D | ~2h | 实测 (SOTA 对比) |
+| **总计** | **~13h** | 单卡串行总耗时 |
 
 ---
 

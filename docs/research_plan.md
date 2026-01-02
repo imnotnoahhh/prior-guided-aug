@@ -15,11 +15,11 @@
 *   **核心假设 (Simplicity Hypothesis)**: 在小样本场景下，**精选的单一操作 (Optimal Single-Op)** 足以逼近 SOTA (RandAugment) 的性能，且具备更高的稳定性（更低方差）和可解释性。复杂的组合增强策略（Multi-Op）往往会导致收益递减甚至过拟合。
 *   **研究定位**: 我们不追求绝对的 SOTA 准确率（Accuracy），而是追求 **"Accuracy-Stability-Complexity"** 三者的最佳平衡（Pareto Optimal）。
 *   **四阶段搜索管道**:
-    1.  Phase 0: 超参校准（确定 weight_decay, label_smoothing）
-    2.  Phase A: 广度筛选有效操作
     3.  Phase B: 深度调参找最佳 (m, p)
     4.  Phase C: 验证性组合搜索（验证多操作是否真正有效，体现“奥卡姆剃刀”原则）
-*   **最终评估**: Phase D: 5-Fold 交叉验证，重点对比 **Ours (Stability)** vs **RandAugment (Complexity)**。
+*   **最终评估**: 
+    1.  Phase D: 5-Fold Cross-Validation (Search Quality)
+    2.  **Phase E**: Official Test Set Evaluation (Generalization & Anti-Leakage)
 
 ---
 
@@ -159,7 +159,10 @@ MUTUAL_EXCLUSION = {
 | **Ablation (Fixed Probability)** | 固定 p=0.5，搜索 m | 证明搜索 Magnitude 的必要性 (Sensitivity Analysis) |
 | **Destructiveness Analysis** | Calculate SSIM/LPIPS metrics | 验证增强策略的语义保真度 (Semantic Preservation) |
 | **Stability Verification** | 3 Random Seeds (42, 100, 2024) | 验证 "0 方差" 现象的复现性 |
+| **Stability Verification** | 3 Random Seeds (42, 100, 2024) | 验证 "0 方差" 现象的复现性 |
 | **Tuned RandAugment** | Random Search (N=1~3, M=1~14) | 验证"即使调参也无法超越本方法" (Fairness) |
+| **Official Test Set Eval** | Evaluate on 10k Test Images | **FINAL STEP**: Avoid Data Leakage, fill Table 1 |
+| **Strategic Collapse** | Visualize Val Acc/Std vs #Ops | 证明贪心搜索自动拒绝复杂性 (Figure 2) |
 
 ---
 

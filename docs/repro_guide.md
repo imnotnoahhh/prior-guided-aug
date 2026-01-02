@@ -1,6 +1,6 @@
 # 复现指南
 
-- 硬件/驱动：CUDA 12.8、NVIDIA Driver 570.133.20、cuDNN 9.8.0.87（4 × A10）。
+- 硬件/驱动：CUDA 12.8、NVIDIA Driver 570.133.20、cuDNN 9.8.0.87（Single NVIDIA A10）。
 - 环境：`conda env create -f environment.yml && conda activate pga`。如已创建，`conda env update -f environment.yml` 保持同步。
 - 数据：自动下载 CIFAR-100 至 `./data`，若离线，请预放置官方二进制文件。
 
@@ -48,7 +48,16 @@ python scripts/run_tuned_randaugment.py
 # 步骤 2: 使用最佳参数 (N=1, M=2) 跑全量验证
 python scripts/run_final_tuned_ra.py
 # Output: Console logs
+# 步骤 2: 使用最佳参数 (N=1, M=2) 跑全量验证
+python scripts/run_final_tuned_ra.py
+# Output: Console logs
+
+### 4. 最终测试集评估 (Test Set Evaluation)
+使用官方 CIFAR-100 Test Set 验证最终策略，避免数据泄露：
+```bash
+python scripts/evaluate_final_policy.py
 ```
+Output: `outputs/test_set_results.csv` 以及控制台输出 (用于填补 Table 1)。
 
 ## 后台运行示例
 如需断线续跑，可使用 nohup：
@@ -69,11 +78,20 @@ python scripts/generate_paper_figures.py
 - `fig4_search_space_colorjitter.png`: Phase A 搜索空间热力图
 - `fig5_stability_boxplot.png`: Phase D 稳定性箱线图 (5-fold)
 - `fig6_cifar10_generalization.png`: 泛化实验对比
+- `fig6_cifar10_generalization.png`: 泛化实验对比
 - `fig7_ablation_magnitude.png`: Magnitude 消融分析
+- `strategic_collapse.png`: 策略坍缩分析 (Figure 2)
 
 **输出目录**: `outputs/figures/`
 
-### 2. 增强效果可视化
+### 2. 策略坍缩可视化 (Strategic Collapse)
+单独生成 "策略坍缩" (Figure 2) 的分析图表：
+```bash
+python scripts/plot_strategic_collapse.py
+```
+Output: `outputs/figures/strategic_collapse.png`
+
+### 3. 增强效果可视化
 ```bash
 python scripts/visualize_augmentations.py --policy outputs/phase_c_final_policy.json
 ```

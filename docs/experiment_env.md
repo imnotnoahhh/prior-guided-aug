@@ -88,7 +88,7 @@ python main_phase_a.py \
     --fold_idx 0 \
     --output_dir outputs \
     --seed 42 \
-    --num_workers 8
+    --num_workers 8  # Mac 用户请设为 0
 ```
 
 ### 输出文件
