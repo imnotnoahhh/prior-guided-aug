@@ -478,9 +478,9 @@ def save_policy(
     strategy: str = "greedy_validated",  
     best_single_acc: float = None,
 ) -> None:
-    """Save final policy to JSON file (v7 format).
+    """Save final policy to JSON file.
     
-    v7: Saves full (name, magnitude, probability) for each operation.
+    Saves full (name, magnitude, probability) for each operation.
     """
     policy_dict = {
         "version": "current",
@@ -512,7 +512,7 @@ def save_policy(
 
 
 def load_policy_for_dynamic(json_path: Path) -> Tuple[List[Tuple[str, float]], int]:
-    """Load dynamic policy from JSON."""
+    # Check for dynamic policy from JSON.
     with open(json_path, "r") as f:
         d = json.load(f)
     
@@ -545,7 +545,7 @@ def train_static_policy(
 ) -> Dict:
     """Train a static combination policy and return metrics.
     
-    v7: Uses build_transform_with_ops with adjusted probabilities.
+    Uses build_transform_with_ops with adjusted probabilities.
     """
 
     
@@ -728,7 +728,7 @@ def run_greedy_combination_search(
     weight_decay: float = 1e-2,
     label_smoothing: float = 0.1,
 ) -> float:
-    """Run Phase C Greedy Combination Search with Validation (v7).
+    """Run Phase C Greedy Combination Search with Validation.
     
     Algorithm:
     1. Start with best single operation from Phase B.

@@ -301,10 +301,7 @@ class EarlyStopping:
     Stops training if validation metric doesn't improve for `patience` epochs,
     but only starts checking after `min_epochs` have passed.
     
-    Update: 
-    - Renamed grace_period to min_epochs (clearer semantics)
-    - Recommended to use mode="max" with val_acc (not val_loss)
-    - Added min_delta filtering for noisy metrics
+    Includes min_delta filtering to avoid stopping due to minor noisy fluctuations.
     
     Args:
         patience: Number of epochs to wait before stopping. Default 30.

@@ -194,7 +194,7 @@ def load_policy(json_path: Path, use_adjusted: bool = True):
     with open(json_path, "r") as f:
         d = json.load(f)
         
-    # Check for v6 dynamic policy
+    # Check for dynamic policy
     if d.get("strategy") == "dynamic_prior":
         pool = []
         for op in d["pool"]:

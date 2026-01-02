@@ -10,13 +10,13 @@
 #   CUDA_VISIBLE_DEVICES=1 bash scripts/train_single_gpu.sh  # 使用 GPU 1
 #
 # 预计时间 (A10 GPU):
-#   Phase 0:  ~1 hour (可选, 仅首次运行)
-#   Baseline: ~15 min
-#   Phase A:  ~1 hour (256 configs × 40 epochs)
-#   Phase B:  ~2-4 hours (ASHA 早停淘汰)
-#   Phase C:  ~2-3 hours (贪心搜索 × 3 seeds × 200 epochs)
+#   Phase 0:  ~50 min (可选, 仅首次运行)
+#   Baseline: ~3 min
+#   Phase A:  ~3 hours (256 configs × 40 epochs)
+#   Phase B:  ~6.5 hours (ASHA 早停淘汰)
+#   Phase C:  ~0.5 hours (贪心搜索 × 3 seeds × 200 epochs)
 #   Phase D:  ~2 hours (6 methods × 5 folds × 200 epochs)
-#   总计:     ~8-12 hours (含 Phase 0)
+#   总计:     ~13 hours (含 Phase 0)
 # =============================================================================
 
 set -euo pipefail
