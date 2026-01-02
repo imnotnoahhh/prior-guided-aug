@@ -49,7 +49,7 @@ def plot_stability_boxplot():
 
     plt.ylim(36, 45)
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'fig1_stability_boxplot.png'))
+    plt.savefig(os.path.join(OUTPUT_DIR, 'fig5_stability_boxplot.png'))
     plt.close()
 
 def plot_search_space_heatmap():
@@ -79,7 +79,7 @@ def plot_search_space_heatmap():
     plt.grid(True, linestyle='--', alpha=0.5)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'fig2_search_space_colorjitter.png'))
+    plt.savefig(os.path.join(OUTPUT_DIR, 'fig4_search_space_colorjitter.png'))
     plt.close()
 
 def plot_complexity_tradeoff():
@@ -115,11 +115,11 @@ def plot_complexity_tradeoff():
     
     for i, row in df_plot.iterrows():
         plt.text(row['Complexity'], row['Std'] + 0.08, 
-                 f"{row['Method']}\nAcc: {row['Accuracy']:.1f}%\n$ \sigma $: {row['Std']:.2f}", 
+                 f"{row['Method']}\nAcc: {row['Accuracy']:.1f}%\n$ \\sigma $: {row['Std']:.2f}", 
                  ha='center', fontweight='bold', fontsize=10)
 
     plt.title('The Complexity Gap: Accuracy-Stability Balance', fontsize=14, fontweight='bold')
-    plt.ylabel('Instability (Standard Deviation $ \sigma $) $\\downarrow$', fontsize=12)
+    plt.ylabel('Instability (Standard Deviation $ \\sigma $) $\\downarrow$', fontsize=12)
     plt.xlabel('Algorithmic Complexity (Operations) $\\rightarrow$', fontsize=12)
     
     plt.xticks([1, 2, 8], ['Baseline', 'Single-Op (Ours)', 'Multi-Op (RandAug)'])
@@ -128,7 +128,7 @@ def plot_complexity_tradeoff():
     plt.grid(True, linestyle='--', alpha=0.5)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'fig3_complexity_gap.png'))
+    plt.savefig(os.path.join(OUTPUT_DIR, 'fig1_complexity_gap.png'))
     plt.close()
 
 def plot_ablation_magnitude():
@@ -164,7 +164,7 @@ def plot_ablation_magnitude():
                      arrowprops=dict(facecolor='black', shrink=0.08, width=1, headwidth=6))
 
         plt.tight_layout()
-        plt.savefig(os.path.join(OUTPUT_DIR, 'fig4_ablation_magnitude.png'))
+        plt.savefig(os.path.join(OUTPUT_DIR, 'fig7_ablation_magnitude.png'))
         plt.close()
     except Exception as e:
         print(f"Skipping Ablation plot: {e}")
@@ -190,10 +190,49 @@ def plot_cifar10_generalization():
                      f'{height:.1f}%', ha='center', va='bottom', fontweight='bold', fontsize=11)
 
         plt.tight_layout()
-        plt.savefig(os.path.join(OUTPUT_DIR, 'fig5_cifar10_generalization.png'))
+        plt.savefig(os.path.join(OUTPUT_DIR, 'fig6_cifar10_generalization.png'))
         plt.close()
     except Exception as e:
         print(f"Skipping CIFAR-10 plot: {e}")
+
+def plot_destructiveness():
+    print("Generating Destructiveness (LPIPS/SSIM) Analysis...")
+    try:
+        df = pd.read_csv('outputs/destructiveness_metrics.csv')
+        
+        # Clean names
+        df['Strategy'] = df['Strategy'].apply(lambda x: x.split(' (')[0])
+        
+        # Plot SSIM and LPIPS side by side
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        
+        colors = ['#95a5a6', '#e74c3c', '#2ecc71'] # Baseline, RandAug, Ours
+        
+        # SSIM (Higher is better)
+        sns.barplot(x='Strategy', y='SSIM_Mean', hue='Strategy', legend=False, data=df, ax=axes[0], palette=colors, alpha=0.9, edgecolor='black')
+        axes[0].errorbar(x=range(len(df)), y=df['SSIM_Mean'], yerr=df['SSIM_Std'], fmt='none', c='black', capsize=5)
+        axes[0].set_title('Structure Preservation (SSIM) $\\uparrow$', fontsize=12, fontweight='bold')
+        axes[0].set_ylabel('SSIM Score')
+        axes[0].set_ylim(0, 0.3)
+        
+        # LPIPS (Lower is better)
+        sns.barplot(x='Strategy', y='LPIPS_Mean', hue='Strategy', legend=False, data=df, ax=axes[1], palette=colors, alpha=0.9, edgecolor='black')
+        axes[1].errorbar(x=range(len(df)), y=df['LPIPS_Mean'], yerr=df['LPIPS_Std'], fmt='none', c='black', capsize=5)
+        axes[1].set_title('Perceptual Deviation (LPIPS) $\\downarrow$', fontsize=12, fontweight='bold')
+        axes[1].set_ylabel('LPIPS Distance')
+        axes[1].set_ylim(0, 0.2)
+        
+        for ax in axes:
+            ax.set_xlabel('')
+            ax.grid(axis='y', linestyle='--', alpha=0.5)
+
+        plt.suptitle('Destructiveness Analysis: Semantic Preservation', fontsize=14, fontweight='bold', y=1.02)
+        plt.tight_layout()
+        plt.savefig(os.path.join(OUTPUT_DIR, 'fig8_destructiveness.png'), bbox_inches='tight')
+        plt.close()
+            
+    except Exception as e:
+        print(f"Skipping Destructiveness plot: {e}")
 
 if __name__ == "__main__":
     try:
@@ -202,6 +241,7 @@ if __name__ == "__main__":
         plot_complexity_tradeoff()
         plot_ablation_magnitude()
         plot_cifar10_generalization()
+        plot_destructiveness()
         print(f"\nAll figures saved successfully to: {OUTPUT_DIR}")
     except Exception as e:
         print(f"Error generating figures: {e}")
