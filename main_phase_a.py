@@ -102,7 +102,7 @@ def generate_sobol_samples_2d(
 def generate_sobol_samples(n_samples: int, seed: int = 42) -> np.ndarray:
     """Generate 1D Sobol sequence samples in [0, 1] (legacy).
 
-    DEPRECATED: Use generate_sobol_samples_2d for v5 experiments.
+    DEPRECATED: Use generate_sobol_samples_2d instead.
     """
     from scipy.stats.qmc import Sobol
     sampler = Sobol(d=1, scramble=True, seed=seed)
@@ -521,7 +521,7 @@ def main() -> int:
     print(f"Early stopping: min_epochs={args.min_epochs}, patience={args.early_stop_patience}, monitor=val_acc")
     print(f"Output dir: {args.output_dir}")
     print("-" * 70)
-    print(f"v5: 2D Sobol samples per op: {args.n_samples}")
+    print(f"2D Sobol samples per op: {args.n_samples}")
     print(f"Search space: (magnitude, probability) from OP_SEARCH_SPACE")
     print("=" * 70)
 

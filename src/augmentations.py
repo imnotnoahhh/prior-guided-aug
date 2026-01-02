@@ -29,7 +29,7 @@ from PIL import Image
 # Each operation has customized (magnitude, probability) search ranges.
 # This embodies prior knowledge about which operations are "destructive" vs "mild".
 # Format: {"op_name": {"m": [min, max], "p": [min, max]}}
-# Reference: research_plan.md Section 2.2
+# Reference: docs/research_plan.md Section 2.2
 #
 # NOTE: RandomGrayscale is binary (full grayscale or none), so magnitude has no effect.
 #       We set m to a fixed value [0.5, 0.5] to avoid wasting search budget.
@@ -306,7 +306,7 @@ class AugmentationSpace:
     - magnitude=0: minimum effect (or no effect)
     - magnitude=1: maximum effect
     
-    Reference: research_plan_v4.md Section 2.2
+    Reference: docs/research_plan.md Section 2.2
     """
     
     # Operation registry: {op_name: {param_name: (min_val, max_val)}}
@@ -414,7 +414,7 @@ class GaussianNoise(nn.Module):
     """Add Gaussian noise to tensor image with clamping to [0, 1].
     
     This is a custom transform since torchvision doesn't provide GaussianNoise.
-    Always clamps output to prevent overflow (per research_plan_v4.md constraint).
+    Always clamps output to prevent overflow.
     
     Args:
         sigma: Standard deviation of the Gaussian noise. Default 0.1.

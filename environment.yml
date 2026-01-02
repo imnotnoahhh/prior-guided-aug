@@ -12,6 +12,7 @@ dependencies:
 
   # ===== 图像处理 (禁止使用 OpenCV!) =====
   - pillow=12.0.0  # PIL 图像库，torchvision 后端依赖
+  - scikit-image==0.26.0 # SSIM 计算
 
   # ===== 科学计算与数据处理 =====
   - numpy=2.3.5        # 数值计算
@@ -36,3 +37,4 @@ dependencies:
       # PyTorch 深度学习框架 (macOS 自动使用 MPS 后端)
       - torch==2.9.1
       - torchvision==0.24.1
+      - lpips==0.1.4
