@@ -287,6 +287,9 @@ P(至少一个) = 1 - (1-0.04)(1-0.47) = 49% ≈ 50% ✓
 |---|---|---|
 | **CIFAR-10 Generalization** | 50-shot setting, 5-fold, 200 epochs | 证明方法不局限于 CIFAR-100，具备通用鲁棒性 |
 | **Ablation (Fixed Probability)** | 固定 p=0.5，搜索 m | 证明搜索 Magnitude 的必要性 (Sensitivity Analysis) |
+| **Destructiveness Analysis** | Calculate SSIM/LPIPS metrics | 验证增强策略的语义保真度 (Semantic Preservation) |
+| **Stability Verification** | 3 Random Seeds (42, 100, 2024) | 验证 "0 方差" 现象的复现性 |
+| **Tuned RandAugment** | Random Search (N=1~3, M=1~14) | 验证"即使调参也无法超越本方法" (Fairness) |
 
 ---
 
@@ -377,7 +380,10 @@ outputs/
     ├── phase_c_*.pth               # Phase C 策略 checkpoints
     └── phase_d_fold{0-4}_best.pth  # 最终 5-fold 模型
 ├── ablation/                     # 消融实验结果
-└── cifar10_50shot_results.csv    # CIFAR-10 泛化实验结果
+├── cifar10_50shot_results.csv    # CIFAR-10 泛化实验结果
+├── destructiveness_metrics.csv   # 破坏性分析结果 (LPIPS/SSIM)
+├── stability_seeds_results.csv   # 稳定性验证结果
+└── tuned_randaugment_results.csv # Tuned RandAugment 搜索结果
 ```
 
 ---

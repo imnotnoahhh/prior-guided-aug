@@ -224,7 +224,38 @@ CUDA_VISIBLE_DEVICES=0 python main_phase_d.py --folds 0,1,2
 
 ---
 
-## 8. 一键运行脚本
+## 8. 补充实验 (Supplementary Experiments)
+
+### 8.1 破坏性分析 (Destructiveness)
+
+```bash
+python scripts/calculate_destructiveness.py
+```
+**输出**: `outputs/destructiveness_metrics.csv`
+
+### 8.2 稳定性验证 (Stability Check)
+
+```bash
+python scripts/run_stability_check.py
+```
+**输出**: `outputs/stability_seeds_results.csv`
+
+### 8.3 公平性对比 (Tuned RandAugment)
+
+```bash
+# 1. 搜索最佳参数
+python scripts/run_tuned_randaugment.py
+
+# 2. 全量验证最佳参数
+python scripts/run_final_tuned_ra.py
+```
+**输出**: 
+- `outputs/tuned_randaugment_results.csv`
+- 控制台日志 (Final Acc)
+
+---
+
+## 9. 一键运行脚本
 
 ```bash
 # 完整训练流程
@@ -249,7 +280,7 @@ tail -f logs/train_*.log
 
 ---
 
-## 9. 计算量估计
+## 10. 计算量估计
 
 | 阶段 | 配置 | 预计时间 |
 |------|------|----------|
@@ -263,7 +294,7 @@ tail -f logs/train_*.log
 
 ---
 
-## 10. 输出文件汇总
+## 11. 输出文件汇总
 
 ```
 outputs/
@@ -280,4 +311,7 @@ outputs/
     ├── baseline_best.pth           # Baseline 最佳模型
     ├── phase_c_*.pth               # Phase C 各策略最佳模型
     └── phase_d_fold{0-4}_best.pth  # Phase D 最终模型 (5-fold)
+├── destructiveness_metrics.csv   # 破坏性分析
+├── stability_seeds_results.csv   # 稳定性验证
+└── tuned_randaugment_results.csv # 公平性对比
 ```
