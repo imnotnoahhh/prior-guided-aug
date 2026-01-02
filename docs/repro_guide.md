@@ -52,12 +52,7 @@ python scripts/run_final_tuned_ra.py
 python scripts/run_final_tuned_ra.py
 # Output: Console logs
 
-### 4. 最终测试集评估 (Test Set Evaluation)
-使用官方 CIFAR-100 Test Set 验证最终策略，避免数据泄露：
-```bash
-python scripts/evaluate_final_policy.py
-```
-Output: `outputs/test_set_results.csv` 以及控制台输出 (用于填补 Table 1)。
+
 
 ## 后台运行示例
 如需断线续跑，可使用 nohup：

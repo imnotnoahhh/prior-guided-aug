@@ -19,7 +19,7 @@
     4.  Phase C: 验证性组合搜索（验证多操作是否真正有效，体现“奥卡姆剃刀”原则）
 *   **最终评估**: 
     1.  Phase D: 5-Fold Cross-Validation (Search Quality)
-    2.  **Phase E**: Official Test Set Evaluation (Generalization & Anti-Leakage)
+
 
 ---
 

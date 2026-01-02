@@ -208,29 +208,12 @@ All experiments are conducted on CIFAR-100 subsampled to 100 images per class (1
     \item \textbf{Ours}: Search Space $K=8$ operations. Magnitude $m \in [0, 1]$ (continuous), Probability $p \in [0, 1]$ (continuous).
 \end{itemize}
 
-\subsection{Final Test Set Evaluation}
-\label{sec:test_eval}
-To rigorously validata our method's generalization ability and ensure no data leakage occurred during the search phase, we performed a final evaluation on the \textbf{Official CIFAR-100 Test Set} (10,000 images). This dataset was completely held out during the search (Phases A-C) and validation (Phase D).
 
-Table \ref{tab:test_results} reports the result. Our method achieves a test accuracy of \textbf{XX.XX\%}, confirming that the performance gains observed in cross-validation translate to unseen data.
-
-\begin{table}[H]
-    \centering
-    \caption{Final Evaluation on Official Test Set (10k images). This confirms generalization beyond the search-phase validation set.}
-    \label{tab:test_results}
-    \begin{tabular}{lc}
-        \toprule
-        Method & Test Accuracy (Official) \\
-        \midrule
-        Ours (Optimal Policy) & \textbf{XX.XX\%} $\pm$ X.XX\% \\
-        \bottomrule
-    \end{tabular}
-\end{table}
 
 \section{Reproducibility Details}
 \label{app:repro}
 
-To ensure full reproducibility of our results, we provide the specific parameters and settings used in our experiments. Code is available at \url{https://github.com/anonymous/prior-guided-aug}.
+To ensure full reproducibility of our results, we provide the specific parameters and settings used in our experiments. Code is available at \url{https://github.com/imnotnoahhh/prior-guided-aug}.
 
 \subsection{Optimal Policy}
 The final policy found by our method on the CIFAR-100 (100-shot) task consists of a single operation:
