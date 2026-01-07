@@ -1,40 +1,135 @@
-# Prior-Guided Augmentation: A Reliable Strategy for Small-Sample Datasets
-# 先验引导增强 - Conda 环境配置
-# 使用命令: conda env create -f environment.yml
-
 name: pga
 channels:
   - conda-forge
-
 dependencies:
-  # ===== Python 版本 =====
-  - python=3.14.2
-
-  # ===== 图像处理 (禁止使用 OpenCV!) =====
-  - pillow=12.0.0  # PIL 图像库，torchvision 后端依赖
-  - scikit-image==0.26.0 # SSIM 计算
-
-  # ===== 科学计算与数据处理 =====
-  - numpy=2.3.5        # 数值计算
-  - pandas=2.3.3       # 数据分析，输出 CSV 日志
-  - scikit-learn=1.8.0 # StratifiedKFold 分层采样
-  - scipy=1.16.3       # Sobol 序列采样 (阶段 A)
-
-  # ===== 可视化 (论文图表) =====
-  - matplotlib=3.10.8  # 绑图：Heatmaps, Efficiency Plot
-  - seaborn=0.13.2     # 统计可视化
-
-  # ===== 实验追踪与日志 =====
-  - tensorboard=2.20.0  # 训练监控，Loss/Acc 曲线
-  - tqdm=4.67.1         # 进度条
-
-  # ===== 配置管理 =====
-  - pyyaml=6.0.3  # YAML 配置文件解析
-
-  # ===== Pip 依赖 =====
+  - _openmp_mutex=4.5
+  - absl-py=2.3.1
+  - aom=3.9.1
+  - blosc=1.21.6
+  - brotli=1.2.0
+  - brotli-bin=1.2.0
+  - brunsli=0.1
+  - bzip2=1.0.8
+  - c-ares=1.34.6
+  - c-blosc2=2.22.0
+  - ca-certificates=2025.11.12
+  - charls=2.4.2
+  - colorama=0.4.6
+  - contourpy=1.3.3
+  - cycler=0.12.1
+  - dav1d=1.2.1
+  - fonttools=4.61.1
+  - freetype=2.14.1
+  - giflib=5.2.2
+  - grpcio=1.74.1
+  - imagecodecs=2026.1.1
+  - imageio=2.37.0
+  - importlib-metadata=8.7.0
+  - joblib=1.5.3
+  - jxrlib=1.1
+  - kiwisolver=1.4.9
+  - lazy-loader=0.4
+  - lcms2=2.17
+  - lerc=4.0.0
+  - libabseil=20250512.1
+  - libaec=1.1.4
+  - libavif16=1.3.0
+  - libblas=3.11.0
+  - libbrotlicommon=1.2.0
+  - libbrotlidec=1.2.0
+  - libbrotlienc=1.2.0
+  - libcblas=3.11.0
+  - libcxx=21.1.8
+  - libdeflate=1.25
+  - libexpat=2.7.3
+  - libffi=3.5.2
+  - libfreetype=2.14.1
+  - libfreetype6=2.14.1
+  - libgcc=15.2.0
+  - libgfortran=15.2.0
+  - libgfortran5=15.2.0
+  - libgrpc=1.74.1
+  - libhwy=1.3.0
+  - libjpeg-turbo=3.1.2
+  - libjxl=0.11.1
+  - liblapack=3.11.0
+  - liblzma=5.8.1
+  - libmpdec=4.0.0
+  - libopenblas=0.3.30
+  - libpng=1.6.53
+  - libprotobuf=6.31.1
+  - libre2-11=2025.11.05
+  - libsqlite=3.51.1
+  - libtiff=4.7.1
+  - libwebp-base=1.6.0
+  - libxcb=1.17.0
+  - libzlib=1.3.1
+  - libzopfli=1.0.3
+  - llvm-openmp=21.1.8
+  - lz4-c=1.10.0
+  - markdown=3.10
+  - markupsafe=3.0.3
+  - matplotlib=3.10.8
+  - matplotlib-base=3.10.8
+  - munkres=1.1.4
+  - ncurses=6.5
+  - networkx=3.6.1
+  - numpy=2.3.5
+  - openjpeg=2.5.4
+  - openjph=0.26.0
+  - openssl=3.6.0
+  - packaging=25.0
+  - pandas=2.3.3
+  - patsy=1.0.2
+  - pillow=12.0.0
   - pip=25.3
+  - protobuf=6.31.1
+  - pthread-stubs=0.4
+  - pyparsing=3.2.5
+  - python=3.14.2
+  - python-dateutil=2.9.0.post0
+  - python-tzdata=2025.3
+  - python_abi=3.14
+  - pytz=2025.2
+  - pyyaml=6.0.3
+  - qhull=2020.2
+  - rav1e=0.7.1
+  - re2=2025.11.05
+  - readline=8.3
+  - scikit-image=0.26.0
+  - scikit-learn=1.8.0
+  - scipy=1.16.3
+  - seaborn=0.13.2
+  - seaborn-base=0.13.2
+  - setuptools=80.9.0
+  - six=1.17.0
+  - snappy=1.2.2
+  - statsmodels=0.14.6
+  - svt-av1=3.1.2
+  - tensorboard=2.20.0
+  - tensorboard-data-server=0.7.0
+  - threadpoolctl=3.6.0
+  - tifffile=2025.12.20
+  - tk=8.6.13
+  - tornado=6.5.4
+  - tqdm=4.67.1
+  - tzdata=2025c
+  - unicodedata2=17.0.0
+  - werkzeug=3.1.4
+  - xorg-libxau=1.0.12
+  - xorg-libxdmcp=1.1.5
+  - yaml=0.2.5
+  - zfp=1.0.1
+  - zipp=3.23.0
+  - zlib-ng=2.3.2
+  - zstd=1.5.7
   - pip:
-      # PyTorch 深度学习框架 (macOS 自动使用 MPS 后端)
+      - filelock==3.20.1
+      - fsspec==2025.12.0
+      - jinja2==3.1.6
+      - lpips==0.1.4
+      - mpmath==1.3.0
+      - sympy==1.14.0
       - torch==2.9.1
       - torchvision==0.24.1
-      - lpips==0.1.4
+      - typing-extensions==4.15.0
