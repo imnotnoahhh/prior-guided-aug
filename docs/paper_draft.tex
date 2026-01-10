@@ -41,7 +41,7 @@ We investigate this phenomenon by asking: are these complex strategies necessary
     \label{fig:pipeline}
 \end{figure}
 
-In this paper, we conduct a systematic study on CIFAR-100 with only 100 samples per class. We observe that while RandAugment provides a marginal accuracy gain, it introduces significant instability. To address this, we propose a streamlined search protocol that prioritizes stability. By filtering out variance-inducing operations early, we demonstrate that a minimalist approach often yields the most robust models.
+In this paper, we conduct a systematic study on CIFAR-100 with only 100 samples per class. We observe that while RandAugment provides a marginal accuracy gain, it introduces significant instability. Our search protocol explicitly targets stability to counter this issue. By filtering out variance-inducing operations early, we demonstrate that a minimalist approach often yields the most robust models.
 
 Our search did not simply try to maximize accuracy. It explored a continuous Magnitude-Probability space, employed multi-fidelity optimization (ASHA) to discard bad actors quickly, and used a greedy selection process that explicitly penalized variance. Surprisingly, this rigorous process consistently selected a single operation, rejecting complex combinations. This suggests that in small-sample regimes, the simplest effective augmentation may be the most robust.
 
@@ -56,7 +56,7 @@ Our search did not simply try to maximize accuracy. It explored a continuous Mag
 
 \textbf{Automated Data Augmentation.} Pioneer works like AutoAugment \cite{cubuk2019autoaugment} formulated augmentation design as a discrete search problem using Reinforcement Learning. While effective, the computational cost was prohibitive. Subsequent methods like RandAugment \cite{cubuk2020randaugment} simplified this by reducing the search space to two parameters ($N, M$) and performing a grid search. However, these methods are implicitly designed for and tuned on large-scale datasets (ImageNet, CIFAR-100 full). Our work reveals that their core assumption---that complexity yields performance---breaks down in data-scarce limits.
 
-\textbf{Small-Sample Learning.} When data is limited, the primary challenge is high variance and overfitting \cite{he2016deep}. Transfer learning is the standard solution, but domain mismatches often require training from scratch. In this regime, heavy augmentations (like Cutout \cite{devries2017improved}) can destroy the limited semantic information available. Our work follows the principles of ``Data-Centric AI,'' seeking to adjust the data distribution to better match model capacity. Our work also relates to recent discussions on simplicity and negative results in model design.
+\textbf{Small-Sample Learning.} In scenarios where data is scarce, models often suffer from high variance. While transfer learning is a common fix, it doesn't apply when domains don't match, forcing us to train from scratch. In this regime, heavy augmentations (like Cutout \cite{devries2017improved}) can destroy the limited semantic information available. Our work follows the principles of ``Data-Centric AI,'' seeking to adjust the data distribution to better match model capacity. Our work also relates to recent discussions on simplicity and negative results in model design.
 
 \section{Augmentation Search Protocol}
 
@@ -80,11 +80,11 @@ We consider a search space of $K=8$ candidate operations (e.g., ColorJitter, Ran
 \subsection{Search Protocol}
 To navigate the stability-accuracy trade-off, we did not perform a standard grid search. Instead, we designed a three-stage funnel. 
 
-\textbf{Phase A: Screening.} We began with a low-fidelity screening, using Sobol sequences to quasi-randomly sample the parameter space. This quickly flagged and discarded operations that caused immediate instability (e.g., high-magnitude geometric distortions).
+\textbf{Phase A: Screening.} We began with a low-fidelity scan using Sobol sequences. This allowed us to immediately drop unstable operations (e.g., high-magnitude geometric distortions) before wasting significant compute.
 
-\textbf{Phase B: Tuning.} Survivors were then passed to the Asynchronous Successive Halving Algorithm (ASHA) \cite{li2020system}. ASHA allowed us to dynamically shift our computing budget, iterating rapidly on promising candidates while killing off underperformers early. This fine-tuning of $(m, p)$ was achieved at a fraction of the cost of a full grid search.
+\textbf{Phase B: Tuning.} For the candidates that pass this screen, we apply ASHA \cite{li2020system} to fine-tune them. This step dynamically focuses our computing budget on the best performers, killing off weak configurations early. This precise tuning of $(m, p)$ was achieved at a fraction of the cost of a full grid search.
 
-\textbf{Phase C: Composition.} Finally, we employed a greedy composition strategy (Algorithm \ref{alg:phase_c}). We attempted to stack operations, but with a strict rule: a new operation could only be added if its accuracy gain outweighed the additional variance it introduced. Interestingly, this check almost always rejected multi-operation policies, converging repeatedly on single, stable transformations.
+\textbf{Phase C: Composition.} Finally, we look at composition (Algorithm \ref{alg:phase_c}). We use a tailored greedy strategy where a new operation is rejected unless its accuracy boost is significantly larger than the variance cost. Interestingly, this check almost always rejected multi-operation policies, converging repeatedly on single, stable transformations.
 
 \begin{algorithm}[H]
 \caption{Greedy Selection Procedure (Phase C)}
@@ -117,11 +117,7 @@ To navigate the stability-accuracy trade-off, we did not perform a standard grid
 \section{Experiments}
 
 \subsection{Setup}
-\textbf{Dataset Splits.} We use CIFAR-100 subsampled to 100 images per class (10,000 total). Crucially, to avoid data leakage:
-\begin{itemize}
-    \item \textbf{Search}: We use a stratified 5-fold cross-validation on the training data. For each fold, we split the 10,000 images into Train (90\%) and Validation (10\%).
-    \item \textbf{Evaluation}: We report the averaged performance across these 5 validation folds to ensure robust estimation.
-\end{itemize}
+\textbf{Dataset Splits.} For our dataset, we took CIFAR-100 and limited it to 100 images per class, giving us 10,000 images in total. To prevent data leakage, we set up a strict validation protocol. We divided the data into 5 folds, keeping a 90/10 split for training and validation within each fold, and we report the final performance as the mean of these independent runs.
 
 \textbf{Training.} We use \textbf{ResNet-18} trained from scratch for 200 epochs (SGD, momentum 0.9, weight decay set to $0.01$, and a batch size of 128). All experiments were performed on a single \textbf{NVIDIA A10 GPU}.
 
@@ -173,10 +169,10 @@ Why do complex strategies fail here? Two reasons stand out. First, \textbf{Valid
 \end{figure}
 
 \section{Limitations}
-Our study is limited to convolutional architectures (\textbf{ResNet-18}) trained from scratch on \textbf{CIFAR-100}. Whether similar conclusions hold for large \textbf{pre-trained models}, \textbf{Vision Transformers (ViTs)}, or other datasets remains an open question. ViTs, for instance, often benefit from stronger regularization due to their lack of inductive biases. Future work should investigate whether this accuracy-stability trade-off generalizes to other architectures and data regimes.
+Our study is limited to convolutional architectures (\textbf{ResNet-18}) trained from scratch on \textbf{CIFAR-100}. Whether similar conclusions hold for large \textbf{pre-trained models}, \textbf{Vision Transformers (ViTs)}, or other datasets remains to be seen. ViTs, for instance, often benefit from stronger regularization due to their lack of inductive biases. Future work should investigate whether this accuracy-stability trade-off generalizes to other architectures and data regimes.
 
 \section{Conclusion}
-Through a systematic empirical study on CIFAR-100 with 100 samples per class, we find that complex augmentation strategies can yield diminishing returns in small-sample regimes. Our multi-phase search protocol identifies a single, well-tuned operation (ColorJitter) that achieves competitive accuracy with significantly lower variance compared to RandAugment. These findings suggest that, in data-scarce scenarios, augmentation design should prioritize stability over complexity.
+Through a systematic empirical study on CIFAR-100 with 100 samples per class, we find that complex strategies stop working well when data is scarce. Our multi-phase search protocol identifies a single, well-tuned operation (ColorJitter) that achieves competitive accuracy with significantly lower variance compared to RandAugment. These findings suggest that, in data-scarce scenarios, augmentation design must prioritize stability over complexity.
 
 \appendix
 \section{Implementation Details}
