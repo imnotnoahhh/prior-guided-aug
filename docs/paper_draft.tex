@@ -18,12 +18,12 @@
 \maketitle
 
 \begin{abstract}
-This paper questions the common belief that more complex data augmentation methods always lead to better outcomes. Typical automated techniques, like RandAugment, depend on complicated, multi-step processes which usually don't perform well when data is limited. By concentrating on a CIFAR-100 setup with just 100 samples for each class, we found a clear trade-off: more complex augmentations raise training variance, which cancels out any possible gains. Instead of seeking intricate combinations, our three-step method, which focuses on stability, discovers that a single, carefully adjusted operation (ColorJitter) matches RandAugment's accuracy (40.74\% versus 42.24\%) while lowering variance by 33\%. These results point to the idea that when learning with small samples, stability is more important than complexity.
+This paper questions the common belief that more complex data augmentation methods necessarily lead to better outcomes. Typical automated techniques, like RandAugment, depend on complicated, multi-step processes which usually don't perform well when data is limited. By concentrating on a CIFAR-100 setup with just 100 samples for each class, we found a clear trade-off: more complex augmentations raise training variance, which cancels out any possible gains. Instead of seeking intricate combinations, our three-step method, which focuses on stability, discovers that a single, carefully adjusted operation (ColorJitter) achieves competitive performance compared to RandAugment (40.74\% versus 42.24\%) while lowering variance by 33\%. These results suggest that in this specific small-sample regime, stability is more important than complexity.
 \end{abstract}
 
 \section{Introduction}
 
-When training data is subsampled to fewer than 100 samples for each class, basic assumptions about data augmentation don't hold up. In commonly used tests like ImageNet, the general thought is that ``more is better''---meaning that more operations and bigger magnitudes lead to better generalization. But, our experiments on low-shot CIFAR-100 show that these complex policies bring in a risky amount of instability. Strong augmentations like RandAugment can ruin the fundamental meaning of the few samples available, causing models to change a lot between different folds of data.
+When training data is subsampled to fewer than 100 samples for each class, basic assumptions about data augmentation don't hold up. In commonly used tests like ImageNet, the general thought is that ``more is better''---meaning that more operations and bigger magnitudes lead to better generalization. But, our experiments on low-shot CIFAR-100 show that these complex policies bring in a substantial amount of instability. Strong augmentations like RandAugment can compromise the fundamental meaning of the few samples available, causing models to change a lot between different folds of data.
 
 We look into this by asking: are these complex policies needed---or are they actually harmful---when there's very little data?
 
@@ -41,7 +41,7 @@ We look into this by asking: are these complex policies needed---or are they act
     \label{fig:pipeline}
 \end{figure}
 
-In this paper, we conduct a systematic study on CIFAR-100 \cite{krizhevsky2009learning} with only 100 samples per class. We observe that while RandAugment provides a marginal accuracy gain, it introduces significant instability. Our search protocol specifically aims for stability to fix this problem. By removing operations that cause variance early on, we show that a simple way usually gives the most reliable models.
+In this paper, we conduct a systematic study on CIFAR-100 \cite{krizhevsky2009learning} with only 100 samples per class. We observe that while RandAugment provides a marginal accuracy gain, it introduces significant instability. Our search protocol specifically aims for stability to fix this problem. By removing operations that cause variance early on, we indicate that a simple approach often yields the most reliable models in this regime.
 
 Our search didn't just try to get the best accuracy. It looked at a full space of Magnitude-Probability, used multi-level optimization to quickly get rid of bad choices, and used a greedy selection that clearly penalized variance. Surprisingly, this thorough process regularly picked a single operation, rejecting complex combinations. This suggests that when working with small samples, the easiest augmentation that works may be the most reliable.
 
@@ -56,7 +56,7 @@ Our search didn't just try to get the best accuracy. It looked at a full space o
 
 \textbf{Automated Data Augmentation.} Original works like AutoAugment \cite{cubuk2019autoaugment} formulated augmentation design as a discrete search problem using Reinforcement Learning. While it did well, it cost too much to compute. Later methods like RandAugment \cite{cubuk2020randaugment} made this easier by reducing the search space to two parameters ($N, M$) and doing a grid search. But, these methods are mainly made for and adjusted on big datasets (ImageNet, full CIFAR-100). Our work shows that their main idea---that complexity leads to performance---doesn't hold up when data is scarce.
 
-\textbf{Small-Sample Learning.} When data is scarce, models often suffer from high variance. While transfer learning is a common solution, it doesn't apply when domains don't match, forcing us to train from scratch. In this case, strong augmentations (like Cutout \cite{devries2017improved}) can ruin the limited semantic information available. Our work follows the ideas of ``Data-Centric AI,'' aiming to adjust the data distribution to better fit what the model can do. Our work also relates to recent discussions on simplicity and negative results in model design.
+\textbf{Small-Sample Learning.} When data is scarce, models often suffer from high variance. While transfer learning is a common solution, it doesn't apply when domains don't match, forcing us to train from scratch. In this case, strong augmentations (like Cutout \cite{devries2017improved}) can compromise the limited semantic information available. Our work follows the ideas of ``Data-Centric AI,'' aiming to adjust the data distribution to better fit what the model can do. Our work also relates to recent discussions on simplicity and negative results in model design.
 
 \section{Augmentation Search Protocol}
 
@@ -68,7 +68,7 @@ Our search didn't just try to get the best accuracy. It looked at a full space o
 \end{figure}
 
 \subsection{Search Space Definition}
-We consider a search space of $K=8$ candidate operations (e.g., ColorJitter, RandomErasing), each parameterized by Magnitude ($m$) and Probability ($p$). Following standard practice, we treat the optimal augmentation configuration $\theta^*$ as a point in a continuous 2D manifold, allowing precise tuning.
+We consider a search space of $K=8$ candidate operations (e.g., ColorJitter, RandomErasing), each parameterized by Magnitude ($m$) and Probability ($p$). Following standard practice, we treat the best augmentation configuration $\theta^*$ as a point in a continuous 2D parameter space, allowing precise tuning.
 
 \begin{figure}[H]
     \centering
@@ -80,11 +80,11 @@ We consider a search space of $K=8$ candidate operations (e.g., ColorJitter, Ran
 \subsection{Search Protocol}
 To handle the stability-accuracy trade-off, we didn't do a normal grid search. Instead, we made a three-stage funnel.
 
-\textbf{Phase A: Screening.} We started with a quick scan using Sobol sequences. This let us quickly drop unstable operations (like high-magnitude geometric distortions) before wasting a lot of computing power.
+\textbf{Phase A: Screening.} We started with a quick scan using Sobol sequences. This let us quickly drop unstable operations (like high-magnitude geometric distortions) before expending significant computing power.
 
 \textbf{Phase B: Tuning.} For the candidates that pass this screen, we apply ASHA \cite{li2020system} to fine-tune them. This step dynamically focuses our computing budget on the best performers, discarding weak configurations early. This precise tuning of $(m, p)$ was done at a fraction of the cost of a full grid search.
 
-\textbf{Phase C: Composition.} Finally, we look at composition (Algorithm \ref{alg:phase_c}). We use a tailored greedy strategy where a new operation is rejected unless its accuracy boost is clearly bigger than the variance cost. Interestingly, this check almost always rejected multi-operation policies, repeatedly converging on single, stable transformations.
+\textbf{Phase C: Composition.} Finally, we look at composition (Procedure \ref{alg:phase_c}). We use a tailored greedy strategy where a new operation is rejected unless its accuracy boost significantly outweighs the variance cost. Interestingly, this check almost always rejected multi-operation policies, repeatedly converging on single, stable transformations.
 
 \begin{algorithm}[H]
 \caption{Greedy Selection Procedure (Phase C)}
@@ -143,7 +143,7 @@ Table \ref{tab:main_results} compares our single-operation policy against standa
 \end{table}
 
 \subsection{Analysis}
-\textbf{The Stability Argument.} While RandAugment achieves a +1.5\% higher mean accuracy, this comes at a steep price. As shown in Figure \ref{fig:stability}, RandAugment (Red) exhibits a much wider variance ($\sigma=1.17$) compared to the single-operation policy ($\sigma=0.78$). Note that this standard deviation represents \textbf{Fold Variance} (sensitivity to data splits). We also verified \textbf{Seed Variance} (sensitivity to initialization) in our CIFAR-10 experiments (see Appendix \ref{app:experiments}), confirming that the stability gains are consistent across both data and initialization randomness. In small-sample applications (e.g., medical imaging), "lucky seeds" cannot be relied upon; a guaranteed, stable baseline is often preferred.
+\textbf{The Stability Argument.} While RandAugment achieves a +1.5\% higher mean accuracy, this comes at a significant trade-off. As shown in Figure \ref{fig:stability}, RandAugment (Red) exhibits a much wider variance ($\sigma=1.17$) compared to the single-operation policy ($\sigma=0.78$). Note that this standard deviation represents \textbf{Fold Variance} (sensitivity to data splits). We also examined \textbf{Seed Variance} (sensitivity to initialization) in our CIFAR-10 experiments (see Appendix \ref{app:experiments}), confirming that the stability consistency holds across both data and initialization randomness. In small-sample applications (e.g., medical imaging), "lucky seeds" cannot be relied upon; a guaranteed, stable baseline is often preferred.
 
 \begin{figure}[H]
     \centering
@@ -156,9 +156,9 @@ Table \ref{tab:main_results} compares our single-operation policy against standa
 
 \textbf{Fair Comparison: Tuning RandAugment.} A common critique is that RandAugment might outperform if properly tuned. To address this, we performed a random search for optimal RandAugment parameters ($N \in [1,3], M \in [1,14]$) on the same 100-shot setup. The best configuration found was $N=1, M=2$ (a minimal augmentation), which achieved a validation accuracy of 35.30\% (averaged over 200 epochs). This is significantly lower than both the default RandAugment (42.24\%) and the single-operation policy (40.74\%).
 
-Why do complex strategies fail here? Two reasons stand out. First, \textbf{Validation Overfitting}: with scarce data, the search algorithm easily exploits noise in the small validation set, selecting parameters that fail to generalize. Second, \textbf{Loss of Inductive Biases}: the default RandAugment parameters ($N=2, M=9$) effectively serve as a strong prior derived from large-scale datasets (ImageNet). Blindly searching from scratch discards this inductive bias. Our single-op policy works because it stays within a safe ``semantic corridor,'' modifying images enough to teach invariance without confusing the model with meaningless noise.
+Why do complex strategies fail here? Two reasons stand out. First, \textbf{Validation Overfitting}: with scarce data, the search algorithm easily exploits noise in the small validation set, selecting parameters that fail to generalize. Second, \textbf{Loss of Inductive Biases}: the default RandAugment parameters ($N=2, M=9$) effectively serve as a strong prior derived from large-scale datasets (ImageNet). Blindly searching from scratch discards this inductive bias. Our single-op policy works because it stays within a safe ``semantic corridor,'' modifying images enough to teach invariance without confusing the model with extraneous noise.
 
-\textbf{Semantic Preservation.} We hypothesize that the high variance of complex strategies stems from semantic destruction. To verify this, we quantified the "destructiveness" of augmentation policies using SSIM (Structural Similarity) and LPIPS (Perceptual Similarity) metrics, averaged over 500 (Original, Augmented) validation image pairs. Results confirm that the single-operation policy maintains high structural integrity (SSIM: $\approx0.196$, LPIPS: $\approx0.091$), comparable to the minimal Baseline (SSIM: $\approx0.198$, LPIPS: $\approx0.084$). Note that absolute SSIM values are low due to geometric transformations causing spatial misalignment, so we focus on relative degradation. In contrast, RandAugment significantly distorts image structure (SSIM: $\approx0.147$, LPIPS: $\approx0.124$). This quantitative evidence supports our claim: the single-operation policy improves performance by preserving semantic content, while RandAugment's gains come at the cost of aggressive distortion, leading to instability.
+\textbf{Semantic Preservation.} We hypothesize that the high variance of complex strategies stems from semantic destruction. To investigate this, we quantified the "destructiveness" of augmentation policies using SSIM (Structural Similarity) and LPIPS (Perceptual Similarity) metrics, averaged over 500 (Original, Augmented) validation image pairs. Results indicate that the single-operation policy maintains high structural integrity (SSIM: $\approx0.196$, LPIPS: $\approx0.091$), comparable to the minimal Baseline (SSIM: $\approx0.198$, LPIPS: $\approx0.084$). Note that absolute SSIM values are low due to geometric transformations causing spatial misalignment, so we focus on relative degradation. In contrast, RandAugment significantly distorts image structure (SSIM: $\approx0.147$, LPIPS: $\approx0.124$). This quantitative evidence supports our hypothesis: the single-operation policy improves performance by preserving semantic content, while RandAugment's gains come at the cost of aggressive distortion, leading to instability.
 
 \begin{figure}[H]
     \centering
@@ -171,7 +171,7 @@ Why do complex strategies fail here? Two reasons stand out. First, \textbf{Valid
 Our study is limited to convolutional architectures (ResNet-18) trained from scratch on CIFAR-100. Whether similar conclusions hold for large pre-trained models, Vision Transformers (ViTs), or other datasets remains to be seen. ViTs, for instance, often benefit from stronger regularization due to their lack of inductive biases. Future work should investigate whether this accuracy-stability trade-off generalizes to other architectures and data regimes.
 
 \section{Conclusion}
-Through a systematic empirical study on CIFAR-100 with 100 samples per class, we find that complex strategies stop working well when data is scarce. Our multi-phase search protocol identifies a single, well-tuned operation (ColorJitter) that achieves competitive accuracy with significantly lower variance compared to RandAugment. These findings suggest that, in data-scarce scenarios, augmentation design must prioritize stability over complexity.
+Through a systematic empirical study on CIFAR-100 with 100 samples per class, we find that complex strategies stop working well when data is scarce. Our multi-phase search protocol identifies a single, well-tuned operation (ColorJitter) that achieves competitive accuracy with significantly lower variance compared to RandAugment. These findings suggest that, in our 100-shot CIFAR-100 scenario, augmentation design should prioritize stability over complexity.
 
 \appendix
 \section{Implementation Details}
@@ -201,8 +201,8 @@ All experiments are conducted on CIFAR-100 subsampled to 100 images per class (1
 
 To ensure full reproducibility of our results, we provide the specific parameters and settings used in our experiments. Code is available at \url{https://github.com/imnotnoahhh/Rethinking-Augmentation}.
 
-\subsection{Optimal Policy}
-The final policy found by the search protocol on the CIFAR-100 (100-shot) task consists of a single operation:
+\subsection{Best-Performing Policy}
+The best policy found by the search protocol on the CIFAR-100 (100-shot) task consists of a single operation:
 \begin{itemize}
     \item \textbf{Operation}: ColorJitter
     \item \textbf{Parameters}: Magnitude $m=0.2575$, Probability $p=0.4239$
@@ -229,7 +229,7 @@ To evaluate generalization across different datasets and sample regimes, we perf
 
 \begin{table}[H]
     \centering
-    \caption{Results on CIFAR-10 (50-shot). The single-operation policy matches the performance of RandAugment while maintaining perfect stability across folds, whereas the Baseline exhibits extreme variance.}
+    \caption{Results on CIFAR-10 (50-shot). The single-operation policy matches the performance of RandAugment while maintaining consistent zero variance across folds, whereas the Baseline exhibits extreme variance.}
     \label{tab:cifar10}
     \begin{tabular}{lcc}
         \toprule
