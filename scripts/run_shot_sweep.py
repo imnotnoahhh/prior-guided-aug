@@ -320,7 +320,7 @@ def train_single_config(
             scheduler.step()
             
             # Early stopping check
-            if early_stopper.step(val_acc):
+            if early_stopper(val_acc, epoch):
                 print(f"    Early stopped at epoch {epoch + 1}")
                 break
         
@@ -394,6 +394,8 @@ def parse_args():
     parser.add_argument("--data_seed", type=int, default=42,
                         help="Data sampling seed (which images are selected). Keep fixed to isolate training variance.")
     parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--num_workers", type=int, default=8,
+                        help="Number of data loading workers. Use 0 for Mac/debugging.")
     parser.add_argument("--output_dir", type=str, default="outputs")
     parser.add_argument("--dry_run", action="store_true")
     parser.add_argument("--reuse_100shot", action="store_true", default=True,
@@ -581,6 +583,7 @@ def main():
             samples_per_class=shot,
             data_seed=args.data_seed,
             batch_size=args.batch_size,
+            num_workers=args.num_workers,
             weight_decay=weight_decay,
             label_smoothing=label_smoothing,
         )

@@ -278,22 +278,35 @@ python scripts/analyze_table1_stats.py
 - 评估: 5-fold CV
 - **顺手记录**: epoch time / img/s (训练效率证据)
 
-**运行命令**:
-```bash
-# Step 1: 最小验证集 (~1.5-2h, 6次训练)
-# 只跑 50/20-shot + fold0，快速判断趋势是否有意义
-python scripts/run_shot_sweep.py --shots 50,20 --folds 0
+**渐进式运行策略**:
 
-# Step 2: 看结果画图
+| Step | 命令 | 训练次数 | 预计时间 | 目的 |
+|------|------|----------|----------|------|
+| 1 | `--shots 50 --folds 0 --epochs 50` | 3 | ~30-45 min | 验证代码 + 看方向信号 |
+| 2 | `--shots 50,20 --folds 0 --epochs 50` | 6 | ~1-1.5h | 判断是否值得投入 |
+| 3 | `--shots 20,50,200 --folds 0,1,2,3,4 --epochs 200` | 45 | ~10-12h | 完整结果 |
+
+```bash
+# Step 1: 方向性信号 (~30-45 min)
+python scripts/run_shot_sweep.py --shots 50 --folds 0 --epochs 50
+
+# Step 2: 加 20-shot 判断趋势 (~1-1.5h total)
+python scripts/run_shot_sweep.py --shots 50,20 --folds 0 --epochs 50
+
+# 画图检查趋势
 python scripts/plot_shot_sweep.py
 
-# Step 3: 如果趋势有意义，补齐剩余 folds 和 200-shot
-python scripts/run_shot_sweep.py --shots 50,20,200 --folds 1,2,3,4
+# Step 3: 完整版 (只有 Step 2 有意义才跑)
+python scripts/run_shot_sweep.py --shots 20,50,200 --folds 0,1,2,3,4 --epochs 200
 
 # 100-shot 会自动从 phase_d_results.csv 复用
 ```
 
-**止损规则**: 如果 Step 1 结果显示 50/20-shot 无明显趋势，则放弃此实验
+**止损规则** (任一条触发则停止):
+- loss 不下降 / acc 接近随机 → 检查数据加载或超参
+- 增强没生效 (图像几乎一样) → 检查 transform 代码
+- 训练异常慢 / 频繁报错 → 检查 GPU 状态或内存
+- CSV 结果重复 / 缺失 → 检查 reuse 逻辑
 
 **输出物**:
 - `outputs/shot_sweep_results.csv` (原始结果)

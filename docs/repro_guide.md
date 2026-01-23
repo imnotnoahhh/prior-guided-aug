@@ -63,15 +63,17 @@ tail -f logs/full_run.log
 验证 SAS 在不同样本量下的表现趋势：
 
 ```bash
-# Step 1: 最小验证集 (~1.5-2h, 6次训练)
-# 只跑 50/20-shot + fold0，快速判断趋势是否有意义
-python scripts/run_shot_sweep.py --shots 50,20 --folds 0
+# Step 1: 方向性信号 (~30-45 min)
+python scripts/run_shot_sweep.py --shots 50 --folds 0 --epochs 50
 
-# Step 2: 看结果画图
+# Step 2: 加 20-shot 判断趋势 (~1-1.5h total)
+python scripts/run_shot_sweep.py --shots 50,20 --folds 0 --epochs 50
+
+# 画图检查趋势
 python scripts/plot_shot_sweep.py
 
-# Step 3: 如果趋势有意义，补齐剩余 folds
-python scripts/run_shot_sweep.py --shots 50,20,200 --folds 1,2,3,4
+# Step 3: 完整版 (只有 Step 2 有意义才跑)
+python scripts/run_shot_sweep.py --shots 20,50,200 --folds 0,1,2,3,4 --epochs 200
 
 # Dry run 测试
 python scripts/run_shot_sweep.py --dry_run --epochs 2
