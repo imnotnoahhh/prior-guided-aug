@@ -59,6 +59,36 @@ nohup bash scripts/train_single_gpu.sh > logs/full_run.log 2>&1 &
 tail -f logs/full_run.log
 ```
 
+## Shot Sweep 实验 (Trend Analysis)
+验证 SAS 在不同样本量下的表现趋势：
+
+```bash
+# Step 1: 最小验证集 (~1.5-2h, 6次训练)
+# 只跑 50/20-shot + fold0，快速判断趋势是否有意义
+python scripts/run_shot_sweep.py --shots 50,20 --folds 0
+
+# Step 2: 看结果画图
+python scripts/plot_shot_sweep.py
+
+# Step 3: 如果趋势有意义，补齐剩余 folds
+python scripts/run_shot_sweep.py --shots 50,20,200 --folds 1,2,3,4
+
+# Dry run 测试
+python scripts/run_shot_sweep.py --dry_run --epochs 2
+```
+
+注意:
+- 100-shot 会自动从 `phase_d_results.csv` 复用
+- `--data_seed` 控制数据采样 (默认 42，保持固定)
+- `--seed` 控制训练随机性
+
+Output:
+- `outputs/shot_sweep_results.csv` (原始结果)
+- `outputs/shot_sweep_summary.csv` (汇总统计)
+- `outputs/figures/fig_shot_sweep_*.png` (可视化图表)
+
+---
+
 ## 绘图 (Visualization)
 训练和评估完成后，运行以下脚本生成论文插图：
 

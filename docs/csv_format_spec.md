@@ -134,6 +134,42 @@ phase, op_name, magnitude, probability, seed, fold_idx, val_acc, val_loss, top5_
 | `95% CI High` | 95% 置信区间上界 |
 | `Fold Values` | 各 fold 准确率列表 |
 
+### Shot Sweep Results (`outputs/shot_sweep_results.csv`)
+不同样本量下的实验原始结果：
+
+| 字段 | 说明 |
+|------|------|
+| `shot` | 每类样本数 (20, 50, 100, 200) |
+| `method` | 方法名 (Baseline, RandAugment, SAS) |
+| `fold_idx` | Fold 索引 (0-4) |
+| `seed` | 训练随机种子 (权重初始化、dropout 等) |
+| `data_seed` | 数据采样种子 (选择哪些图片)，保持固定以隔离训练方差 |
+| `val_acc` | 验证集准确率 (%) |
+| `val_loss` | 验证集损失 |
+| `top5_acc` | Top-5 准确率 (%) |
+| `train_acc` | 训练集准确率 (%) |
+| `train_loss` | 训练集损失 |
+| `epochs_run` | 实际运行的 epoch 数 |
+| `best_epoch` | 最佳 epoch |
+| `runtime_sec` | 总运行时间 (秒) |
+| `epoch_time_avg` | 平均每 epoch 时间 (秒) |
+| `timestamp` | ISO 8601 时间戳 |
+| `error` | 错误信息 |
+
+### Shot Sweep Summary (`outputs/shot_sweep_summary.csv`)
+不同样本量下的汇总统计：
+
+| 字段 | 说明 |
+|------|------|
+| `shot` | 每类样本数 |
+| `method` | 方法名 |
+| `mean_acc` | 平均准确率 (%) |
+| `std_acc` | 标准差 |
+| `min_acc` | 最小准确率 (%) |
+| `lower_bound` | Mean - Std |
+| `epoch_time_avg` | 平均每 epoch 时间 (秒) |
+| `n_folds` | 完成的 fold 数量 |
+
 ## 论文写作用途
 
 | 论文内容 | 使用字段 |

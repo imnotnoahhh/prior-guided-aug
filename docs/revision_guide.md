@@ -278,10 +278,29 @@ python scripts/analyze_table1_stats.py
 - 评估: 5-fold CV
 - **顺手记录**: epoch time / img/s (训练效率证据)
 
+**运行命令**:
+```bash
+# Step 1: 最小验证集 (~1.5-2h, 6次训练)
+# 只跑 50/20-shot + fold0，快速判断趋势是否有意义
+python scripts/run_shot_sweep.py --shots 50,20 --folds 0
+
+# Step 2: 看结果画图
+python scripts/plot_shot_sweep.py
+
+# Step 3: 如果趋势有意义，补齐剩余 folds 和 200-shot
+python scripts/run_shot_sweep.py --shots 50,20,200 --folds 1,2,3,4
+
+# 100-shot 会自动从 phase_d_results.csv 复用
+```
+
+**止损规则**: 如果 Step 1 结果显示 50/20-shot 无明显趋势，则放弃此实验
+
 **输出物**:
-1. **Accuracy vs Shot**: 折线 + 阴影 (std 范围)
-2. **Fold Std vs Shot**: 重点突出 20/50-shot
-3. **Lower Bound vs Shot**: 最坏情况性能
+- `outputs/shot_sweep_results.csv` (原始结果)
+- `outputs/shot_sweep_summary.csv` (汇总统计)
+- `outputs/figures/fig_shot_sweep_accuracy.png` (折线 + 阴影)
+- `outputs/figures/fig_shot_sweep_std.png` (方差柱状图)
+- `outputs/figures/fig_shot_sweep_combined.png` (论文用组合图)
 
 **预期故事**: 
 > SAS 在 20/50-shot 下反超 RandAugment (方差更低，下界更高)
