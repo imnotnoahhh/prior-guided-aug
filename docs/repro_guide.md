@@ -90,7 +90,9 @@ python scripts/plot_shot_sweep.py --output_dir outputs/shot_sweep_final
 ```
 
 注意:
-- `--no_early_stop` 禁用 early stopping，保证结果可比较
+- `--no_early_stop` 禁用 early stopping，所有 fold 统一跑满 epochs，保证训练预算一致
+- `--sas_config` 显式指定 SAS 参数 (Phase B 调优结果)
+- `--log_file` 将输出同时写入日志文件和终端
 - `--data_seed` 控制数据采样 (默认 42，保持固定)
 - `--seed` 控制训练随机性
 
