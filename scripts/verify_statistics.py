@@ -159,6 +159,56 @@ def verify_percentage_claims():
     print(f"  ({std_ra} - {std_sas}) / {std_sas} × 100 = {std_increase:.1f}%")
 
 
+def verify_variance_difference():
+    """Bootstrap test for variance difference between RandAugment and SAS."""
+    print("\n" + "=" * 60)
+    print("VARIANCE DIFFERENCE BOOTSTRAP TEST")
+    print("=" * 60)
+    
+    randaugment_folds = np.array([42.5, 41.6, 42.9, 40.6, 43.6])
+    sas_folds = np.array([40.1, 42.1, 40.6, 40.5, 40.4])
+    
+    # Observed std difference
+    std_ra = np.std(randaugment_folds, ddof=1)
+    std_sas = np.std(sas_folds, ddof=1)
+    observed_diff = std_ra - std_sas
+    
+    print(f"\nObserved:")
+    print(f"  RandAugment std: {std_ra:.4f}")
+    print(f"  SAS std: {std_sas:.4f}")
+    print(f"  Difference (RA - SAS): {observed_diff:.4f}")
+    
+    # Bootstrap confidence interval for std difference
+    n_bootstrap = 10000
+    np.random.seed(42)
+    
+    bootstrap_diffs = []
+    for _ in range(n_bootstrap):
+        # Resample with replacement
+        ra_sample = np.random.choice(randaugment_folds, size=len(randaugment_folds), replace=True)
+        sas_sample = np.random.choice(sas_folds, size=len(sas_folds), replace=True)
+        
+        std_ra_boot = np.std(ra_sample, ddof=1)
+        std_sas_boot = np.std(sas_sample, ddof=1)
+        bootstrap_diffs.append(std_ra_boot - std_sas_boot)
+    
+    bootstrap_diffs = np.array(bootstrap_diffs)
+    ci_low = np.percentile(bootstrap_diffs, 2.5)
+    ci_high = np.percentile(bootstrap_diffs, 97.5)
+    
+    # Proportion of bootstrap samples where RA has higher std
+    prop_ra_higher = np.mean(bootstrap_diffs > 0)
+    
+    print(f"\nBootstrap Analysis (n={n_bootstrap}):")
+    print(f"  95% CI for std difference: [{ci_low:.4f}, {ci_high:.4f}]")
+    print(f"  P(RA std > SAS std): {prop_ra_higher:.4f}")
+    
+    if ci_low > 0:
+        print(f"  ✓ CI does not include 0: RandAugment has significantly higher variance")
+    else:
+        print(f"  ⚠ CI includes 0: difference may not be significant")
+
+
 def verify_destructiveness_metrics():
     """Verify SSIM/LPIPS claims from destructiveness_metrics.csv."""
     print("\n" + "=" * 60)
@@ -197,6 +247,7 @@ def main():
     verify_wilcoxon_test()
     verify_lambda_threshold()
     verify_percentage_claims()
+    verify_variance_difference()
     verify_destructiveness_metrics()
     
     print("\n" + "=" * 60)
