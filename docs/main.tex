@@ -251,8 +251,27 @@ Why do complex strategies fail here? Two reasons stand out. First, \textbf{Valid
 
 \textbf{Scaling Behavior.} We report an additional shot-scaling study in the supplemental material to illustrate scaling trends and potential failure modes under a different protocol.
 
-\subsection{Ablation: The Necessity of Magnitude Search}
-A natural question is whether the full 2D search over $(m, p)$ is necessary, or if a simpler approach would suffice. We investigated this by fixing $p=0.5$ for ColorJitter and searching only for $m$ using 10 Sobol samples.
+\subsection{Ablation Studies}
+
+\textbf{Search Workflow Ablation.} To validate the necessity of each search phase, we compare three configurations: (1) \textit{Phase A only}: using the best configuration from Sobol screening directly (RandomPerspective, $m$=0.014, $p$=0.1133), evaluated with full 200-epoch training; (2) \textit{Full SAS}: the complete pipeline including ASHA tuning (Phase B). Note that Phase A uses quick 40-epoch training for screening purposes, while final evaluation uses full training for fair comparison.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Search workflow ablation. Phase A screening identifies candidates quickly; ASHA tuning (Phase B) significantly improves both accuracy and stability.}
+    \label{tab:search_ablation}
+    \begin{tabular}{lcc}
+        \toprule
+        Configuration & Mean Acc (\%) & Std Dev \\
+        \midrule
+        Phase A only & 35.80 & 1.65 \\
+        \textbf{Full SAS} & \textbf{40.74} & \textbf{0.78} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The +4.94\% accuracy gain and 52\% variance reduction demonstrate that ASHA tuning is essential---Phase A screening alone is insufficient for optimal policy selection.
+
+\textbf{Magnitude Search Necessity.} We also investigated whether the full 2D search over $(m, p)$ is necessary by fixing $p=0.5$ for ColorJitter and searching only for $m$.
 
 \begin{figure}[htbp]
     \centering
@@ -261,7 +280,7 @@ A natural question is whether the full 2D search over $(m, p)$ is necessary, or 
     \label{fig:ablation}
 \end{figure}
 
-The results show clear performance variance driven by magnitude changes: accuracy ranges from 20\% to 34\% depending on $m$. This validates our design choice of a 2D search space $(m, p)$ over a simplified 1D search. Even with a fixed probability, the magnitude parameter critically affects performance, justifying the additional search dimension.
+Accuracy ranges from 20\% to 34\% depending on $m$, validating our 2D search space design.
 
 \subsection{Generalization to CIFAR-10 (50-shot)}
 Having validated the search protocol design, we next evaluate whether our findings generalize to different datasets. We performed an experiment on CIFAR-10 subsampled to 50 images per class (500 images total), using the same training protocol.

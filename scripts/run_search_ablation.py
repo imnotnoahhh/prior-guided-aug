@@ -6,6 +6,9 @@ Phase A best config: RandomPerspective (m=0.014, p=0.1133)
 """
 
 import sys
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 from pathlib import Path
 
 # Add project root to path
