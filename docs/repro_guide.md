@@ -62,29 +62,35 @@ tail -f logs/full_run.log
 ## Shot Sweep 实验 (Trend Analysis)
 验证 SAS 在不同样本量下的表现趋势：
 
-**重要**: 每个 Step 使用独立 output_dir，避免结果污染！
+**重要配置**:
+- 每个 Step 使用独立 output_dir，避免结果污染
+- 使用 `--no_early_stop` 禁用 early stopping，保证每个 fold 训练预算一致
+- Windows 上使用 `--num_workers 0`
 
 ```bash
 # Step 1: 验证 SAS 收敛 (~15-20 min)
 python scripts/run_shot_sweep.py --shots 50 --folds 0 --epochs 50 \
-  --methods Baseline,SAS --output_dir outputs_step1 --batch_size 128 --num_workers 8
+  --methods Baseline,SAS --output_dir outputs_step1 --batch_size 128 --num_workers 8 --no_early_stop
 
 # Step 2: 加 RandAugment 和 20-shot 判断趋势 (~1-1.5h total)
 python scripts/run_shot_sweep.py --shots 50,20 --folds 0 --epochs 50 \
-  --methods Baseline,RandAugment,SAS --output_dir outputs_step2 --batch_size 128 --num_workers 8
+  --methods Baseline,RandAugment,SAS --output_dir outputs_step2 --batch_size 128 --num_workers 8 --no_early_stop
 
 # 画图检查趋势
 python scripts/plot_shot_sweep.py --output_dir outputs_step2
 
 # Step 3: 完整版 (只有 Step 2 有意义才跑)
 python scripts/run_shot_sweep.py --shots 20,50,200 --folds 0,1,2,3,4 --epochs 200 \
-  --methods Baseline,RandAugment,SAS --output_dir outputs_final --batch_size 128 --num_workers 8
+  --methods Baseline,RandAugment,SAS --output_dir outputs/shot_sweep_final \
+  --batch_size 128 --num_workers 0 --no_early_stop --sas_config ColorJitter,0.2575,0.4239 \
+  --log_file outputs/shot_sweep_final/run.log
 
 # 画最终图
-python scripts/plot_shot_sweep.py --output_dir outputs_final
+python scripts/plot_shot_sweep.py --output_dir outputs/shot_sweep_final
 ```
 
 注意:
+- `--no_early_stop` 禁用 early stopping，保证结果可比较
 - `--data_seed` 控制数据采样 (默认 42，保持固定)
 - `--seed` 控制训练随机性
 

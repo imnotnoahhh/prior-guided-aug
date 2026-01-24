@@ -173,6 +173,7 @@ def train_single_config(
     weight_decay: float = 1e-2,
     label_smoothing: float = 0.1,
     early_stop_patience: int = 60,
+    no_early_stop: bool = False,
 ) -> Dict:
     """Train one configuration and return metrics with timing.
     
@@ -209,14 +210,13 @@ def train_single_config(
         val_transform = get_val_transform(include_normalize=False)
         
         # Create datasets with shot-based sampling
-        # Use data_seed (fixed) for data sampling, not train_seed
         train_dataset = CIFAR100ShotBased(
             root="./data",
             train=True,
             fold_idx=fold_idx,
             samples_per_class=samples_per_class,
             transform=transform,
-            random_state=data_seed,  # Fixed data seed
+            random_state=data_seed,
         )
         
         val_dataset = CIFAR100ShotBased(
@@ -225,7 +225,7 @@ def train_single_config(
             fold_idx=fold_idx,
             samples_per_class=samples_per_class,
             transform=val_transform,
-            random_state=data_seed,  # Fixed data seed
+            random_state=data_seed,
         )
         
         print(f"    Train samples: {len(train_dataset)}, Val samples: {len(val_dataset)}")
@@ -239,6 +239,8 @@ def train_single_config(
             num_workers=num_workers,
             pin_memory=use_cuda,
             drop_last=False,
+            persistent_workers=True if num_workers > 0 else False,
+            prefetch_factor=4 if num_workers > 0 else None,
         )
         
         val_loader = DataLoader(
@@ -248,6 +250,8 @@ def train_single_config(
             num_workers=num_workers,
             pin_memory=use_cuda,
             drop_last=False,
+            persistent_workers=True if num_workers > 0 else False,
+            prefetch_factor=4 if num_workers > 0 else None,
         )
         
         # Create model
@@ -270,13 +274,21 @@ def train_single_config(
         # AMP scaler
         scaler = torch.amp.GradScaler() if use_cuda else None
         
-        # Early stopping
-        early_stopper = EarlyStopping(
-            patience=early_stop_patience,
-            mode="max",
-            min_epochs=min(60, epochs // 2),
-            min_delta=0.2,
-        )
+        # Early stopping (disabled if no_early_stop=True)
+        if no_early_stop:
+            early_stopper = EarlyStopping(
+                patience=99999,  # Effectively disabled
+                mode="max",
+                min_epochs=epochs,  # Never triggers
+                min_delta=0.2,
+            )
+        else:
+            early_stopper = EarlyStopping(
+                patience=early_stop_patience,
+                mode="max",
+                min_epochs=min(60, epochs // 2),
+                min_delta=0.2,
+            )
         
         # Training loop with timing
         best_val_acc = 0.0
@@ -287,7 +299,9 @@ def train_single_config(
         best_epoch = 0
         epoch_times = []
         
-        for epoch in range(epochs):
+        # Progress bar for epochs
+        pbar = tqdm(range(epochs), desc="    Training", leave=False)
+        for epoch in pbar:
             epoch_start = time.time()
             
             train_loss, train_acc = train_one_epoch(
@@ -309,6 +323,13 @@ def train_single_config(
             epoch_time = time.time() - epoch_start
             epoch_times.append(epoch_time)
             
+            # Update progress bar with metrics
+            pbar.set_postfix({
+                'loss': f'{train_loss:.3f}',
+                'acc': f'{val_acc:.1f}%',
+                'best': f'{best_val_acc:.1f}%'
+            })
+            
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
                 best_val_loss = val_loss
@@ -317,10 +338,11 @@ def train_single_config(
                 best_train_loss = train_loss
                 best_epoch = epoch + 1
             
-            scheduler.step()
+            scheduler.step()  # No epoch argument needed
             
             # Early stopping check
             if early_stopper(val_acc, epoch):
+                pbar.close()
                 print(f"    Early stopped at epoch {epoch + 1}")
                 break
         
@@ -402,6 +424,10 @@ def parse_args():
                         help="Reuse 100-shot results from phase_d_results.csv")
     parser.add_argument("--sas_config", type=str, default=None,
                         help="SAS config as 'op_name,magnitude,probability'")
+    parser.add_argument("--no_early_stop", action="store_true",
+                        help="Disable early stopping (run all epochs)")
+    parser.add_argument("--log_file", type=str, default=None,
+                        help="Log file path (also prints to stdout)")
     return parser.parse_args()
 
 
@@ -444,8 +470,36 @@ def load_existing_100shot_results(output_dir: Path) -> pd.DataFrame:
     return pd.DataFrame(results)
 
 
+class TeeOutput:
+    """Write to both file and stdout."""
+    def __init__(self, file_path):
+        self.file = open(file_path, 'w', encoding='utf-8')
+        self.stdout = sys.stdout
+    
+    def write(self, data):
+        self.stdout.write(data)
+        self.file.write(data)
+        self.file.flush()
+    
+    def flush(self):
+        self.stdout.flush()
+        self.file.flush()
+    
+    def close(self):
+        self.file.close()
+
+
 def main():
     args = parse_args()
+    
+    # Setup logging to file if specified
+    tee = None
+    if args.log_file:
+        log_path = Path(args.log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        tee = TeeOutput(str(log_path))
+        sys.stdout = tee
+        print(f"Logging to: {log_path}")
     
     # Parse arguments
     shots = [int(s) for s in args.shots.split(",")]
@@ -497,7 +551,7 @@ def main():
     if output_csv.exists():
         existing_df = pd.read_csv(output_csv)
         existing_results = existing_df.to_dict("records")
-        print(f"Loaded {len(existing_results)} existing results")
+    print(f"Loaded {len(existing_results)} existing results")
     
     # Check for 100-shot reuse
     reused_100shot = pd.DataFrame()
@@ -530,7 +584,7 @@ def main():
                     experiments.append((shot, method, fold_idx))
     
     # Sort experiments for optimal trend discovery:
-    # Priority: fold0 first, then 50-shot → 20-shot → 100-shot → 200-shot
+    # Priority: fold0 first, then 50-shot ??20-shot ??100-shot ??200-shot
     shot_priority = {50: 0, 20: 1, 100: 2, 200: 3}
     method_priority = {"Baseline": 0, "RandAugment": 1, "SAS": 2}
     
@@ -546,6 +600,7 @@ def main():
     print(f"Folds: {folds}")
     print(f"Epochs: {args.epochs}")
     print(f"Data seed: {args.data_seed} (fixed for all experiments)")
+    print(f"Early stopping: {'DISABLED' if args.no_early_stop else 'enabled'}")
     
     if args.dry_run:
         print("\n[DRY RUN MODE]")
@@ -588,6 +643,7 @@ def main():
             num_workers=args.num_workers,
             weight_decay=weight_decay,
             label_smoothing=label_smoothing,
+            no_early_stop=args.no_early_stop,
         )
         
         all_results.append(result)
@@ -595,7 +651,7 @@ def main():
         # Save incrementally
         pd.DataFrame(all_results).to_csv(output_csv, index=False)
         
-        print(f"    Val Acc: {result['val_acc']:.2f}%, "
+    print(f"    Val Acc: {result['val_acc']:.2f}%, "
               f"Epoch Time: {result['epoch_time_avg']:.2f}s")
     
     # Generate summary
@@ -637,7 +693,15 @@ def main():
     summary_df.to_csv(summary_csv, index=False)
     print(f"\nSummary saved to: {summary_csv}")
     print(f"Raw results saved to: {output_csv}")
+    
+    # Close log file if opened
+    if tee is not None:
+        print(f"Log saved to: {args.log_file}")
+        sys.stdout = tee.stdout
+        tee.close()
 
 
 if __name__ == "__main__":
     main()
+
+
