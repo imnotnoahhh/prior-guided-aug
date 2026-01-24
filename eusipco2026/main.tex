@@ -57,7 +57,7 @@ We investigate this question: are complex augmentation policies necessary---or p
     \label{fig:pipeline}
 \end{figure*}
 
-In this paper, we conduct a systematic study on CIFAR-100 \cite{krizhevsky2009learning} with $\sim$90 training samples per class---a realistic scenario for many specialized domains. We observe that while RandAugment provides a marginal accuracy gain (+1.5\%), it introduces significant cross-fold instability (+50\% higher variance). This poses a fundamental challenge: \textit{when only one training run is feasible, how can practitioners predict what performance to expect?}
+In this paper, we conduct a systematic study on CIFAR-100 \cite{krizhevsky2009learning} with $\sim$90 training samples per class---a realistic scenario for many specialized domains. We observe that while RandAugment provides a marginal accuracy gain (+1.5\%), it introduces significant cross-fold instability (+50\% higher standard deviation). This poses a fundamental challenge: \textit{when only one training run is feasible, how can practitioners predict what performance to expect?}
 
 To address this challenge, we propose \textbf{SAS} (Stability-aware Augmentation Search), a three-phase protocol that explicitly penalizes variance during policy selection. Phase A screens candidate operations using Sobol sampling for broad coverage. Phase B fine-tunes promising candidates using ASHA scheduling for efficient hyperparameter optimization. Phase C performs greedy composition with stability constraints, rejecting operations that increase variance. By removing high-variance operations early, SAS identifies simple, reliable augmentation policies optimized for small-sample regimes.
 
@@ -192,7 +192,7 @@ Table \ref{tab:main_results} compares SAS against standard baselines.
             Baseline (S0) & 39.90 & 1.01 & 2.4 & 2.53 & Low \\
             Baseline-NoAug & 29.08 & 3.30 & 8.8 & 11.35 & None \\
             RandAugment & \textbf{42.24} & 1.17 & 3.0 & 2.77 & High (N=2) \\
-            Cutout & 36.26 & 1.23 & 2.5 & 3.39 & Med \\
+            Cutout & 36.26 & 1.23 & 3.0 & 3.39 & Med \\
             \midrule
             \textbf{SAS (ColorJitter)} & 40.74 & \textbf{0.78} & \textbf{2.0} & \textbf{1.91} & \textbf{Low} \\
             \bottomrule
@@ -203,7 +203,7 @@ Table \ref{tab:main_results} compares SAS against standard baselines.
 \subsection{Analysis}
 \textbf{The Predictability Argument.} RandAugment achieves +1.5\% higher mean accuracy, which we acknowledge. However, this gain comes at a cost: complex augmentation introduces greater \textbf{uncertainty}. Specifically, RandAugment exhibits 45\% higher relative dispersion (CV=2.77\% vs.\ 1.91\%) and 50\% wider fold-to-fold range (Width=3.0\% vs.\ 2.0\%). 
 
-In scenarios requiring \textit{one-shot training}---where retraining is impractical---SAS provides a more predictable performance distribution. While the accuracy difference is not statistically significant (paired Wilcoxon signed-rank test across 5 folds, $p=0.19$), the dispersion reduction is consistent across all metrics. From a decision-theoretic view, defining utility as $U = \mu - \lambda \sigma$, SAS outperforms RandAugment when risk aversion $\lambda > 1.28$.
+In scenarios requiring \textit{one-shot training}---where retraining is impractical---SAS provides a more predictable performance distribution. While the accuracy difference is not statistically significant (paired Wilcoxon signed-rank test across 5 folds, $p=0.19$), the dispersion reduction is consistent across all metrics. From a decision-theoretic view, defining utility as $U = \mu - \lambda \sigma$, SAS outperforms RandAugment when risk aversion $\lambda > 3.85$.
 
 \begin{figure}[htbp]
     \centering
@@ -218,7 +218,7 @@ In scenarios requiring \textit{one-shot training}---where retraining is impracti
 
 Why do complex strategies fail here? Two reasons stand out. First, \textbf{Validation Overfitting}: with scarce data, the search algorithm easily exploits noise in the small validation set, selecting parameters that fail to generalize. Second, \textbf{Loss of Inductive Biases}: the default RandAugment parameters ($N=2, M=9$) effectively serve as a strong prior derived from large-scale datasets (ImageNet). Blindly searching from scratch discards this inductive bias. SAS works because it stays within a safe ``semantic corridor,'' modifying images enough to teach invariance without confusing the model with extraneous noise.
 
-\textbf{Semantic Preservation: The Root Cause of Instability.} We hypothesize that the high variance of complex strategies stems from \textit{semantic destruction}. To investigate this, we quantified the ``destructiveness'' of augmentation policies using SSIM (Structural Similarity) and LPIPS (Perceptual Similarity) metrics, averaged over 500 (Original, Augmented) validation image pairs. Results indicate that SAS maintains high structural integrity (SSIM: $\approx$0.196, LPIPS: $\approx$0.091), comparable to the minimal Baseline (SSIM: $\approx$0.198, LPIPS: $\approx$0.084). In contrast, RandAugment significantly distorts image structure (SSIM: $\approx$0.147, LPIPS: $\approx$0.124)---a 25\% relative degradation. This explains the variance paradox: \textbf{RandAugment's accuracy gains may reflect sensitivity to augmentation artifacts} rather than genuine semantic features, while SAS provides a more robust estimation of generalization capability (Fig.~\ref{fig:failure_cases}).
+\textbf{Semantic Preservation: The Root Cause of Instability.} We hypothesize that the high variance of complex strategies stems from \textit{semantic destruction}. To investigate this, we quantified the ``destructiveness'' of augmentation policies using SSIM (Structural Similarity) and LPIPS (Perceptual Similarity) metrics, averaged over 500 (Original, Augmented) validation image pairs. Results indicate that SAS maintains high structural integrity (SSIM: $\approx$0.196, LPIPS: $\approx$0.091), comparable to the minimal Baseline (SSIM: $\approx$0.198, LPIPS: $\approx$0.084). In contrast, RandAugment significantly distorts image structure (SSIM: $\approx$0.147, LPIPS: $\approx$0.124)---a 25\% relative degradation. This correlation between lower semantic preservation and higher variance suggests that \textbf{RandAugment's accuracy gains are associated with greater sensitivity to augmentation-induced variations}, while SAS provides a more robust estimation of generalization capability (Fig.~\ref{fig:failure_cases}).
 
 \begin{figure}[htbp]
     \centering
@@ -248,7 +248,7 @@ Why do complex strategies fail here? Two reasons stand out. First, \textbf{Valid
         \toprule
         Configuration & Acc (\%) & Std & Width & CV (\%) & Time \\
         \midrule
-        Phase A only (Sobol) & 35.80 & 1.65 & 4.2 & 4.61 & 1h \\
+        Phase A only (Sobol) & 35.80 & 1.65 & 4.8 & 4.61 & 1h \\
         Phase A + B (no C) & 40.52 & 0.92 & 2.4 & 2.27 & 3.5h \\
         \textbf{Full SAS (A+B+C)} & \textbf{40.74} & \textbf{0.78} & \textbf{2.0} & \textbf{1.91} & 4h \\
         \bottomrule
@@ -268,7 +268,7 @@ The +4.94\% accuracy gain and 52\% variance reduction (Std: 1.65 $\rightarrow$ 0
 
 \section{Limitations and Future Work}
 
-\textbf{Limitations.} Our study is limited to (1) convolutional architectures (ResNet-18) trained from scratch, (2) CIFAR-100 benchmark, and (3) the specific $\sim$90-shot regime. Whether similar conclusions hold for Vision Transformers, which often require stronger regularization due to their lack of inductive biases, remains to be investigated. Additionally, the same validation folds used for policy selection are also used for final reporting. To mitigate selection bias, we use Stratified 5-fold cross-validation with disjoint folds and report results across multiple random seeds. Our core claim concerns \textit{relative stability} (variance comparison) rather than absolute accuracy.
+\textbf{Limitations.} Our study is limited to (1) convolutional architectures (ResNet-18) trained from scratch, (2) CIFAR-100 benchmark, and (3) the specific $\sim$90-shot regime. Whether similar conclusions hold for Vision Transformers, which often require stronger regularization due to their lack of inductive biases, remains to be investigated. Additionally, the same validation folds used for policy selection are also used for final reporting---a common limitation in augmentation search literature. To mitigate potential selection bias, we use Stratified 5-fold cross-validation with disjoint folds and report results across multiple random seeds; adopting nested cross-validation would provide stronger guarantees. Our core claim concerns \textit{relative stability} (variance comparison) rather than absolute accuracy.
 
 \textbf{Future Work.} We identify three promising directions:
 \begin{itemize}
@@ -280,7 +280,7 @@ The +4.94\% accuracy gain and 52\% variance reduction (Std: 1.65 $\rightarrow$ 0
 \section{Conclusion}
 Through a systematic empirical study on CIFAR-100 with $\sim$90 training samples per class, we reveal a fundamental trade-off between augmentation complexity and training stability. Complex strategies like RandAugment achieve higher mean accuracy (+1.5\%) but introduce substantially greater uncertainty across data splits---exhibiting 45\% higher relative dispersion and 50\% wider fold-to-fold range. This instability poses practical challenges: when only one training run is feasible, practitioners cannot reliably predict what performance to expect.
 
-Our stability-aware search protocol (SAS) explicitly addresses this challenge by penalizing variance during policy selection. The resulting policy---a single, carefully-tuned ColorJitter operation---achieves competitive accuracy (96\% of RandAugment) with 33\% lower standard deviation and significantly better coefficient of variation (CV=1.91\% vs.\ 2.77\%). Analysis of semantic preservation metrics (SSIM, LPIPS) suggests that RandAugment's accuracy gains may reflect sensitivity to augmentation artifacts, while SAS provides a more robust estimation of true generalization.
+Our stability-aware search protocol (SAS) explicitly addresses this challenge by penalizing variance during policy selection. The resulting policy---a single, carefully-tuned ColorJitter operation---achieves competitive accuracy (96\% of RandAugment) with 33\% lower standard deviation and significantly better coefficient of variation (CV=1.91\% vs.\ 2.77\%). Analysis of semantic preservation metrics (SSIM, LPIPS) reveals a correlation between lower structural preservation and higher variance, suggesting that SAS provides a more robust estimation of true generalization.
 
 These findings have practical implications for safety-critical applications (medical imaging, autonomous systems) where predictability matters as much as accuracy. When practitioners value reproducibility and cannot afford multiple training runs, simpler augmentation policies offer a compelling alternative in small-sample regimes.
 
